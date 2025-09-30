@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Face Recognition Audit Logger Configuration -->
+    
+    <!-- Audit log appender for face recognition events -->
+    <appender name="FACE_RECOGNITION_AUDIT" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${kc.home.dir:-.}/data/log/face-recognition-audit.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${kc.home.dir:-.}/data/log/face-recognition-audit.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>100MB</maxFileSize>
+            <maxHistory>90</maxHistory>
+            <totalSizeCap>10GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <timestamp>
+                    <timeZone>UTC</timeZone>
+                </timestamp>
+                <logLevel/>
+                <loggerName/>
+                <message/>
+                <mdc/>
+                <arguments/>
+                <stackTrace/>
+            </providers>
+        </encoder>
+    </appender>
+
+    <!-- Security audit appender for high-risk operations -->
+    <appender name="SECURITY_AUDIT" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${kc.home.dir:-.}/data/log/face-recognition-security-audit.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${kc.home.dir:-.}/data/log/face-recognition-security-audit.%d{yyyy-MM-dd}.%i.log.gz</fileNamePattern>
+            <maxFileSize>50MB</maxFileSize>
+            <maxHistory>365</maxHistory>
+            <totalSizeCap>5GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <timestamp>
+                    <timeZone>UTC</timeZone>
+                </timestamp>
+                <logLevel/>
+                <loggerName/>
+                <message/>
+                <mdc/>
+                <arguments/>
+                <stackTrace/>
+            </providers>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>WARN</level>
+        </filter>
+    </appender>
+
+    <!-- Console appender for development -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Face Recognition Audit Logger -->
+    <logger name="FACE_RECOGNITION_AUDIT" level="INFO" additivity="false">
+        <appender-ref ref="FACE_RECOGNITION_AUDIT"/>
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <!-- Face Recognition Security Logger -->
+    <logger name="com.bioid.keycloak.events.FaceRecognitionEventListener" level="INFO" additivity="false">
+        <appender-ref ref="FACE_RECOGNITION_AUDIT"/>
+        <appender-ref ref="SECURITY_AUDIT"/>
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <!-- Face Recognition Components -->
+    <logger name="com.bioid.keycloak" level="INFO"/>
+    <logger name="com.bioid.keycloak.admin" level="INFO"/>
+    <logger name="com.bioid.keycloak.authenticator" level="INFO"/>
+    <logger name="com.bioid.keycloak.credential" level="INFO"/>
+    <logger name="com.bioid.keycloak.enroll" level="INFO"/>
+    <logger name="com.bioid.keycloak.client" level="INFO"/>
+
+    <!-- Debug logging for development -->
+    <logger name="com.bioid.keycloak" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>

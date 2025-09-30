@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+    "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+    "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+
+<suppressions>
+    <!-- Suppress all checks for generated protobuf classes -->
+    <suppress files=".*[/\\]target[/\\]generated-sources[/\\]protobuf[/\\].*\.java" checks=".*"/>
+    
+    <!-- Suppress specific checks for generated code -->
+    <suppress files=".*[/\\]target[/\\]generated-sources[/\\].*\.java" checks=".*"/>
+    
+    <!-- Suppress warnings for test files -->
+    <suppress files=".*[/\\]src[/\\]test[/\\].*\.java" checks="MagicNumber"/>
+    <suppress files=".*[/\\]src[/\\]test[/\\].*\.java" checks="AvoidStarImport"/>
+    
+    <!-- Suppress specific warnings for configuration classes -->
+    <suppress files=".*Configuration.*\.java" checks="ParameterNumber"/>
+    <suppress files=".*Config.*\.java" checks="ParameterNumber"/>
+    
+    <!-- Suppress line length for long URLs and imports -->
+    <suppress files=".*\.java" checks="LineLength" lines="1-50"/>
+</suppressions>

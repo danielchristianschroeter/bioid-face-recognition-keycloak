@@ -1,0 +1,177 @@
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# Java
+*.class
+*.log
+*.ctxt
+.mtj.tmp/
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+hs_err_pid*
+replay_pid*
+
+# IDE - IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+# IDE - Eclipse
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+# IDE - NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# IDE - VS Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*~
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~.nib
+local.properties
+
+# Security - Never commit sensitive configuration
+*.key
+*.pem
+*.p12
+*.jks
+*.keystore
+bioid.properties
+application-local.properties
+application-dev.properties
+**/secrets/
+**/credentials/
+
+# Build and deployment
+build/
+dist/
+*.tgz
+*.tar.gz
+
+# Logs
+logs/
+*.log
+*.log.*
+*.out
+
+# Test reports
+**/test-results/
+**/coverage/
+jacoco.exec
+*.exec
+
+# Generated sources
+**/generated-sources/
+**/generated-test-sources/
+
+# Protocol Buffers generated files
+**/*_pb2.py
+**/*_pb2_grpc.py
+**/target/generated-sources/protobuf/
+
+# Node.js (for any frontend components)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn-integrity
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Backup files
+*.bak
+*.backup
+*.orig
+
+# JVM crash logs
+hs_err_pid*
+
+# Profiling
+*.hprof
+*.prof
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Cache directories
+.cache/
+.gradle/
+.m2/repository/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Keycloak specific
+keycloak-data/
+keycloak-logs/
+standalone/data/
+standalone/log/
+standalone/tmp/
+
+# BioID specific - never commit BWS credentials
+bws-client-id.txt
+bws-key.txt
+bioid-credentials.json
+
+# Testing
+**/test-output/
+**/allure-results/
+**/screenshots/

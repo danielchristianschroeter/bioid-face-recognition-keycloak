@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- Exclude generated protobuf classes from all checks -->
+    <Match>
+        <Source name="~.*[/\\]target[/\\]generated-sources[/\\]protobuf[/\\].*\.java"/>
+    </Match>
+    
+    <!-- Exclude all generated sources -->
+    <Match>
+        <Source name="~.*[/\\]target[/\\]generated-sources[/\\].*\.java"/>
+    </Match>
+    
+    <!-- Exclude test classes from certain checks -->
+    <Match>
+        <Source name="~.*[/\\]src[/\\]test[/\\].*\.java"/>
+        <Bug pattern="DM_EXIT"/>
+    </Match>
+    
+    <!-- Exclude specific patterns that are common in generated code -->
+    <Match>
+        <Bug pattern="SE_BAD_FIELD"/>
+        <Source name="~.*[/\\]target[/\\]generated-sources[/\\].*\.java"/>
+    </Match>
+    
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP"/>
+        <Source name="~.*[/\\]target[/\\]generated-sources[/\\].*\.java"/>
+    </Match>
+    
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+        <Source name="~.*[/\\]target[/\\]generated-sources[/\\].*\.java"/>
+    </Match>
+</FindBugsFilter>

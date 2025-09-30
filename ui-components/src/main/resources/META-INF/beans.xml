@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="https://jakarta.ee/xml/ns/jakartaee"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/beans_4_0.xsd"
+       version="4.0" bean-discovery-mode="annotated">
+    
+    <!-- 
+    Bean discovery mode is set to "annotated" which means only classes with CDI annotations
+    will be considered as CDI beans. This prevents automatic discovery of JAX-RS resources
+    and other classes that should not be CDI beans.
+    -->
+    
+    <scan>
+        <!-- Exclude admin resources from CDI scanning as they are created manually -->
+        <exclude name="com.bioid.keycloak.admin.**" />
+        
+        <!-- Exclude client classes from CDI scanning as they are POJOs -->
+        <exclude name="com.bioid.keycloak.client.**" />
+        
+        <!-- Exclude DTOs and other data classes -->
+        <exclude name="com.bioid.keycloak.admin.dto.**" />
+        <exclude name="com.bioid.keycloak.admin.service.**" />
+        <exclude name="com.bioid.keycloak.health.**" />
+    </scan>
+</beans>

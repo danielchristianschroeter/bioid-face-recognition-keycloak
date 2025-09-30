@@ -1,0 +1,126 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: keycloak-postgres
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - keycloak-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  keycloak:
+    image: keycloak/keycloak:26.4
+    container_name: keycloak-bioid
+    environment:
+      # Database Configuration
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
+      
+      # Keycloak Admin Configuration
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin123}
+      
+      # BioID Configuration
+      BWS_CLIENT_ID: ${BWS_CLIENT_ID}
+      BWS_KEY: ${BWS_KEY}
+      BWS_ENDPOINT: ${BWS_ENDPOINT:-https://face.bws-eu.bioid.com}
+      
+      # Keycloak Configuration
+      KC_HOSTNAME: localhost
+      KC_HTTP_ENABLED: true
+      KC_HEALTH_ENABLED: true
+      KC_METRICS_ENABLED: true
+      
+      # Development Settings
+      KC_LOG_LEVEL: INFO
+      KC_LOG_CONSOLE_COLOR: true
+      
+      # Debug Logging for Authentication Issues
+      QUARKUS_LOG_CATEGORY_ORG_KEYCLOAK_AUTHENTICATION_LEVEL: INFO
+      QUARKUS_LOG_CATEGORY_ORG_KEYCLOAK_SERVICES_LEVEL: INFO
+      QUARKUS_LOG_CATEGORY_ORG_KEYCLOAK_SESSIONS_LEVEL: INFO
+      QUARKUS_LOG_CATEGORY_ORG_KEYCLOAK_TRANSACTION_LEVEL: INFO
+      QUARKUS_LOG_CATEGORY_ORG_KEYCLOAK_STORAGE_LEVEL: INFO
+      QUARKUS_LOG_CATEGORY_COM_BIOID_KEYCLOAK_LEVEL: INFO
+      QUARKUS_LOG_CATEGORY_ORG_KEYCLOAK_SERVICES_RESOURCES_ACCOUNT_LEVEL: INFO
+      QUARKUS_LOG_CATEGORY_ORG_KEYCLOAK_PROTOCOL_OIDC_LEVEL: INFO
+      
+      # Face Recognition Extension Configuration
+      BIOID_VERIFICATION_THRESHOLD: ${BIOID_VERIFICATION_THRESHOLD:-0.015}
+      BIOID_MAX_RETRIES: ${BIOID_MAX_RETRIES:-3}
+      BIOID_LIVENESS_ENABLED: ${BIOID_LIVENESS_ENABLED:-true}
+      BIOID_PREFERRED_REGION: ${BIOID_PREFERRED_REGION:-EU}
+      BIOID_TEMPLATE_TTL_DAYS: ${BIOID_TEMPLATE_TTL_DAYS:-365}
+      
+    ports:
+      - "8080:8080"
+      - "8443:8443"
+      - "9000:9000"  # Management port
+    volumes:
+      # Mount the extension JAR
+      - ./deployment/target/keycloak-bioid-extension-1.0.0-SNAPSHOT.jar:/opt/keycloak/providers/keycloak-bioid-extension.jar:ro
+      # Mount themes for development
+      #- ./ui-components/src/main/resources/theme/bioid:/opt/keycloak/themes/bioid:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - keycloak-network
+    command: 
+      - start-dev
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health/ready || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Optional: Prometheus for metrics collection
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: keycloak-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - keycloak-network
+    profiles:
+      - monitoring
+
+  # Optional: Grafana for metrics visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: keycloak-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./docker/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./docker/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    networks:
+      - keycloak-network
+    profiles:
+      - monitoring
+
+volumes:
+  postgres_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  keycloak-network:
+    driver: bridge

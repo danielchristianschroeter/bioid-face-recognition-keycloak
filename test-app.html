@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BioID Face Authentication Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .logout-button {
+            background-color: #dc3545;
+        }
+        .logout-button:hover {
+            background-color: #c82333;
+        }
+        .user-info {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>BioID Face Authentication Test</h1>
+        <p>This test page demonstrates the correct OIDC flow with your BioID face authentication system.</p>
+        
+        <div id="loginSection">
+            <h2>Login Test</h2>
+            <p>Click the button below to start the authentication flow. You'll be redirected to Keycloak, where you can test your username/password + face authentication.</p>
+            <button class="button" onclick="login()">Login with Face Authentication</button>
+            
+            <h3>Quick Links</h3>
+            <p>You can also access these Keycloak pages directly:</p>
+            <a href="http://localhost:8080/realms/bioid-demo/account" class="button" target="_blank">Account Management</a>
+            <a href="http://localhost:8080/admin/master/console/#/bioid-demo" class="button" target="_blank">Admin Console</a>
+        </div>
+
+        <div id="userSection" style="display: none;">
+            <h2>Authentication Successful!</h2>
+            <div class="user-info">
+                <h3>User Information:</h3>
+                <div id="userInfo"></div>
+            </div>
+            
+            <h3>Account Management</h3>
+            <p>Now that you're authenticated, you can manage your account and face enrollment:</p>
+            <a href="http://localhost:8080/realms/bioid-demo/account" class="button" target="_blank">Manage Account & Face Enrollment</a>
+            <a href="http://localhost:8080/realms/bioid-demo/account/#/security/signingin" class="button" target="_blank">Manage Authentication Methods</a>
+            
+            <br><br>
+            <button class="button logout-button" onclick="logout()">Logout</button>
+        </div>
+
+        <div id="errorSection" style="display: none;">
+            <div class="error">
+                <h3>Authentication Error:</h3>
+                <div id="errorInfo"></div>
+            </div>
+            <button class="button" onclick="clearError()">Try Again</button>
+        </div>
+
+        <div id="tokenSection" style="display: none;">
+            <h3>Access Token (for debugging):</h3>
+            <pre id="tokenDisplay"></pre>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const KEYCLOAK_URL = 'http://localhost:8080';
+        const REALM = 'bioid-demo';
+        const CLIENT_ID = 'bioid-demo-client';
+        const REDIRECT_URI = window.location.origin + window.location.pathname;
+
+        // Check for authentication result on page load
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const error = urlParams.get('error');
+            const errorDescription = urlParams.get('error_description');
+
+            if (error) {
+                showError(`${error}: ${errorDescription || 'Unknown error'}`);
+                // Clean up URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+            } else if (code) {
+                // Exchange code for tokens
+                exchangeCodeForTokens(code);
+            } else {
+                // Check if we have stored tokens
+                const accessToken = localStorage.getItem('access_token');
+                if (accessToken) {
+                    validateAndShowUser(accessToken);
+                }
+            }
+        };
+
+        async function login() {
+            // Generate PKCE parameters
+            const codeVerifier = generateCodeVerifier();
+            const codeChallenge = await generateCodeChallenge(codeVerifier);
+            
+            // Store code verifier for later use
+            localStorage.setItem('code_verifier', codeVerifier);
+
+            // Build authorization URL
+            const authUrl = new URL(`${KEYCLOAK_URL}/realms/${REALM}/protocol/openid-connect/auth`);
+            authUrl.searchParams.set('client_id', CLIENT_ID);
+            authUrl.searchParams.set('redirect_uri', REDIRECT_URI);
+            authUrl.searchParams.set('response_type', 'code');
+            authUrl.searchParams.set('scope', 'openid profile email');
+            authUrl.searchParams.set('code_challenge', codeChallenge);
+            authUrl.searchParams.set('code_challenge_method', 'S256');
+            authUrl.searchParams.set('state', generateState());
+
+            // Redirect to Keycloak
+            window.location.href = authUrl.toString();
+        }
+
+        async function exchangeCodeForTokens(code) {
+            try {
+                const codeVerifier = localStorage.getItem('code_verifier');
+                if (!codeVerifier) {
+                    throw new Error('Code verifier not found');
+                }
+
+                const tokenUrl = `${KEYCLOAK_URL}/realms/${REALM}/protocol/openid-connect/token`;
+                const response = await fetch(tokenUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        grant_type: 'authorization_code',
+                        client_id: CLIENT_ID,
+                        code: code,
+                        redirect_uri: REDIRECT_URI,
+                        code_verifier: codeVerifier
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.text();
+                    throw new Error(`Token exchange failed: ${errorData}`);
+                }
+
+                const tokens = await response.json();
+                
+                // Store tokens
+                localStorage.setItem('access_token', tokens.access_token);
+                localStorage.setItem('refresh_token', tokens.refresh_token);
+                localStorage.setItem('id_token', tokens.id_token);
+
+                // Clean up
+                localStorage.removeItem('code_verifier');
+                window.history.replaceState({}, document.title, window.location.pathname);
+
+                // Show user info
+                validateAndShowUser(tokens.access_token);
+
+            } catch (error) {
+                showError(`Token exchange error: ${error.message}`);
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        }
+
+        async function validateAndShowUser(accessToken) {
+            try {
+                const userInfoUrl = `${KEYCLOAK_URL}/realms/${REALM}/protocol/openid-connect/userinfo`;
+                const response = await fetch(userInfoUrl, {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch user info');
+                }
+
+                const userInfo = await response.json();
+                showUser(userInfo, accessToken);
+
+            } catch (error) {
+                showError(`User info error: ${error.message}`);
+                localStorage.clear();
+            }
+        }
+
+        function showUser(userInfo, accessToken) {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('errorSection').style.display = 'none';
+            document.getElementById('userSection').style.display = 'block';
+
+            const userInfoDiv = document.getElementById('userInfo');
+            userInfoDiv.innerHTML = `
+                <p><strong>Username:</strong> ${userInfo.preferred_username || 'N/A'}</p>
+                <p><strong>Email:</strong> ${userInfo.email || 'N/A'}</p>
+                <p><strong>First Name:</strong> ${userInfo.given_name || 'N/A'}</p>
+                <p><strong>Last Name:</strong> ${userInfo.family_name || 'N/A'}</p>
+                <p><strong>Subject:</strong> ${userInfo.sub || 'N/A'}</p>
+            `;
+
+            // Show token for debugging (optional)
+            const tokenDisplay = document.getElementById('tokenDisplay');
+            const tokenPayload = JSON.parse(atob(accessToken.split('.')[1]));
+            tokenDisplay.textContent = JSON.stringify(tokenPayload, null, 2);
+            document.getElementById('tokenSection').style.display = 'block';
+        }
+
+        function showError(message) {
+            document.getElementById('loginSection').style.display = 'block';
+            document.getElementById('userSection').style.display = 'none';
+            document.getElementById('errorSection').style.display = 'block';
+            document.getElementById('tokenSection').style.display = 'none';
+            document.getElementById('errorInfo').textContent = message;
+        }
+
+        function clearError() {
+            document.getElementById('errorSection').style.display = 'none';
+        }
+
+        async function logout() {
+            const idToken = localStorage.getItem('id_token');
+            localStorage.clear();
+
+            // Redirect to Keycloak logout
+            const logoutUrl = new URL(`${KEYCLOAK_URL}/realms/${REALM}/protocol/openid-connect/logout`);
+            logoutUrl.searchParams.set('post_logout_redirect_uri', REDIRECT_URI);
+            if (idToken) {
+                logoutUrl.searchParams.set('id_token_hint', idToken);
+            }
+
+            window.location.href = logoutUrl.toString();
+        }
+
+        // PKCE helper functions
+        function generateCodeVerifier() {
+            const array = new Uint8Array(32);
+            crypto.getRandomValues(array);
+            return base64URLEncode(array);
+        }
+
+        function generateCodeChallenge(verifier) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(verifier);
+            return crypto.subtle.digest('SHA-256', data).then(hash => {
+                return base64URLEncode(new Uint8Array(hash));
+            });
+        }
+
+        function base64URLEncode(array) {
+            return btoa(String.fromCharCode.apply(null, array))
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=/g, '');
+        }
+
+        function generateState() {
+            const array = new Uint8Array(16);
+            crypto.getRandomValues(array);
+            return base64URLEncode(array);
+        }
+
+        // Make generateCodeChallenge work with the synchronous flow
+        async function generateCodeChallenge(verifier) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(verifier);
+            const hash = await crypto.subtle.digest('SHA-256', data);
+            return base64URLEncode(new Uint8Array(hash));
+        }
+    </script>
+</body>
+</html>

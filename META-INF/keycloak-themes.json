@@ -1,0 +1,6 @@
+{
+  "themes": [{
+    "name": "bioid",
+    "types": ["login", "account"]
+  }]
+}

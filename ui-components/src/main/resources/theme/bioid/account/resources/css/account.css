@@ -1,0 +1,115 @@
+/* BioID Account Theme Styles */
+
+/* Face credential management styles */
+.face-credential-section {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+}
+
+.face-credential-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.face-credential-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 0.5rem;
+    fill: #0066cc;
+}
+
+.face-credential-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.face-credential-status {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.face-credential-status.active {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.face-credential-status.inactive {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.face-credential-info {
+    margin: 1rem 0;
+    color: #666;
+}
+
+.face-credential-actions {
+    margin-top: 1rem;
+}
+
+.face-credential-actions .btn {
+    margin-right: 0.5rem;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .face-credential-section {
+        margin: 1rem 0;
+        padding: 1rem;
+    }
+    
+    .face-credential-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .face-credential-actions .btn {
+        display: block;
+        width: 100%;
+        margin: 0.25rem 0;
+    }
+}
+
+/* BioID branding */
+.bioid-brand {
+    color: #0066cc;
+}
+
+.bioid-logo {
+    max-height: 32px;
+    width: auto;
+}
+
+/* Enhanced security indicators */
+.security-level {
+    display: flex;
+    align-items: center;
+    margin: 0.5rem 0;
+}
+
+.security-level-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+}
+
+.security-level-high .security-level-indicator {
+    background-color: #28a745;
+}
+
+.security-level-medium .security-level-indicator {
+    background-color: #ffc107;
+}
+
+.security-level-low .security-level-indicator {
+    background-color: #dc3545;
+}
