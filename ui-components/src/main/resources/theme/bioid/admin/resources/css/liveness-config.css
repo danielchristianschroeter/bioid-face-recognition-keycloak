@@ -1,0 +1,342 @@
+/* Liveness Configuration Panel Styles */
+
+.liveness-config-panel {
+    background-color: var(--pf-global--BackgroundColor--100);
+}
+
+/* Liveness Mode Selection */
+.liveness-mode-option {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pf-global--spacer--xs);
+}
+
+.liveness-mode-title {
+    font-weight: var(--pf-global--FontWeight--semi-bold);
+    color: var(--pf-global--Color--100);
+}
+
+.liveness-mode-description {
+    font-size: var(--pf-global--FontSize--sm);
+    color: var(--pf-global--Color--200);
+}
+
+/* Liveness Threshold Slider */
+.liveness-threshold-container {
+    position: relative;
+    padding: var(--pf-global--spacer--md) 0;
+}
+
+.liveness-threshold-labels {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: var(--pf-global--spacer--sm);
+    font-size: var(--pf-global--FontSize--sm);
+}
+
+.threshold-label-low,
+.threshold-label-high {
+    color: var(--pf-global--Color--200);
+}
+
+.threshold-label-current {
+    font-weight: var(--pf-global--FontWeight--semi-bold);
+    color: var(--pf-global--primary-color--100);
+    background-color: var(--pf-global--primary-color--50);
+    padding: var(--pf-global--spacer--xs) var(--pf-global--spacer--sm);
+    border-radius: var(--pf-global--BorderRadius--sm);
+}
+
+/* Custom Slider Styling */
+#liveness-threshold {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--pf-global--BackgroundColor--200);
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+#liveness-threshold::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--pf-global--primary-color--100);
+    cursor: pointer;
+    border: 2px solid var(--pf-global--BackgroundColor--100);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#liveness-threshold::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--pf-global--primary-color--100);
+    cursor: pointer;
+    border: 2px solid var(--pf-global--BackgroundColor--100);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#liveness-threshold:focus::-webkit-slider-thumb {
+    box-shadow: 0 0 0 3px var(--pf-global--primary-color--200);
+}
+
+#liveness-threshold:focus::-moz-range-thumb {
+    box-shadow: 0 0 0 3px var(--pf-global--primary-color--200);
+}
+
+/* Challenge Directions */
+#challenge-directions-group .pf-c-check-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--pf-global--spacer--md);
+}
+
+#challenge-directions-group .pf-c-check__label {
+    display: flex;
+    align-items: center;
+    font-weight: var(--pf-global--FontWeight--normal);
+}
+
+#challenge-directions-group .pf-c-check__label i {
+    color: var(--pf-global--primary-color--100);
+}
+
+/* Advanced Settings */
+#advanced-settings .pf-c-expandable-section__toggle {
+    border: none;
+    background: none;
+    padding: var(--pf-global--spacer--sm) 0;
+    font-weight: var(--pf-global--FontWeight--semi-bold);
+    color: var(--pf-global--primary-color--100);
+}
+
+#advanced-settings .pf-c-expandable-section__toggle:hover {
+    color: var(--pf-global--primary-color--200);
+}
+
+#advanced-settings .pf-c-expandable-section__toggle-icon {
+    transition: transform 0.2s ease;
+}
+
+#advanced-settings .pf-c-expandable-section__toggle[aria-expanded="true"] .pf-c-expandable-section__toggle-icon {
+    transform: rotate(90deg);
+}
+
+#advanced-settings .pf-c-expandable-section__content {
+    padding-top: var(--pf-global--spacer--md);
+    border-top: 1px solid var(--pf-global--BorderColor--100);
+    margin-top: var(--pf-global--spacer--md);
+}
+
+/* Test Panel */
+.liveness-test-upload {
+    margin-bottom: var(--pf-global--spacer--lg);
+}
+
+.liveness-test-preview {
+    margin-top: var(--pf-global--spacer--md);
+    padding: var(--pf-global--spacer--md);
+    background-color: var(--pf-global--BackgroundColor--200);
+    border-radius: var(--pf-global--BorderRadius--sm);
+}
+
+#test-images-gallery {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.test-image-preview {
+    position: relative;
+    max-width: 150px;
+    max-height: 150px;
+    border: 2px solid var(--pf-global--BorderColor--100);
+    border-radius: var(--pf-global--BorderRadius--sm);
+    overflow: hidden;
+}
+
+.test-image-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.test-image-preview .image-remove {
+    position: absolute;
+    top: var(--pf-global--spacer--xs);
+    right: var(--pf-global--spacer--xs);
+    background: var(--pf-global--danger-color--100);
+    color: var(--pf-global--Color--light--100);
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0.8;
+}
+
+.test-image-preview .image-remove:hover {
+    opacity: 1;
+}
+
+/* Test Results */
+.liveness-test-results {
+    margin-top: var(--pf-global--spacer--lg);
+    padding: var(--pf-global--spacer--md);
+    background-color: var(--pf-global--BackgroundColor--200);
+    border-radius: var(--pf-global--BorderRadius--sm);
+}
+
+#test-result-alert.pf-m-success {
+    --pf-c-alert--BackgroundColor: var(--pf-global--success-color--50);
+    --pf-c-alert--BorderColor: var(--pf-global--success-color--100);
+}
+
+#test-result-alert.pf-m-danger {
+    --pf-c-alert--BackgroundColor: var(--pf-global--danger-color--50);
+    --pf-c-alert--BorderColor: var(--pf-global--danger-color--100);
+}
+
+#test-result-alert.pf-m-warning {
+    --pf-c-alert--BackgroundColor: var(--pf-global--warning-color--50);
+    --pf-c-alert--BorderColor: var(--pf-global--warning-color--100);
+}
+
+#test-result-details {
+    margin-top: var(--pf-global--spacer--md);
+}
+
+/* Configuration Validation Modal */
+#config-validation-modal .pf-c-modal-box {
+    max-width: 500px;
+}
+
+#config-validation-errors {
+    margin: 0;
+    padding-left: var(--pf-global--spacer--lg);
+}
+
+#config-validation-errors li {
+    margin-bottom: var(--pf-global--spacer--xs);
+    color: var(--pf-global--warning-color--200);
+}
+
+/* Loading States */
+.liveness-config-loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.liveness-test-running {
+    position: relative;
+}
+
+.liveness-test-running::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid var(--pf-global--primary-color--100);
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: liveness-spin 1s linear infinite;
+}
+
+@keyframes liveness-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Form Validation States */
+.pf-c-form__group.pf-m-error .pf-c-form-control,
+.pf-c-form__group.pf-m-error .pf-c-select__toggle {
+    border-color: var(--pf-global--danger-color--100);
+}
+
+.pf-c-form__group.pf-m-success .pf-c-form-control,
+.pf-c-form__group.pf-m-success .pf-c-select__toggle {
+    border-color: var(--pf-global--success-color--100);
+}
+
+.pf-c-form__helper-text.pf-m-error {
+    color: var(--pf-global--danger-color--100);
+}
+
+.pf-c-form__helper-text.pf-m-success {
+    color: var(--pf-global--success-color--100);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    #challenge-directions-group .pf-c-check-group {
+        grid-template-columns: 1fr;
+    }
+    
+    .liveness-threshold-labels {
+        flex-direction: column;
+        gap: var(--pf-global--spacer--xs);
+        text-align: center;
+    }
+    
+    #test-images-gallery {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* Accessibility Enhancements */
+.liveness-mode-option:focus-within {
+    outline: 2px solid var(--pf-global--primary-color--100);
+    outline-offset: 2px;
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+    #liveness-threshold {
+        border: 2px solid var(--pf-global--Color--100);
+    }
+    
+    #liveness-threshold::-webkit-slider-thumb,
+    #liveness-threshold::-moz-range-thumb {
+        border: 3px solid var(--pf-global--Color--100);
+    }
+    
+    .threshold-label-current {
+        border: 1px solid var(--pf-global--primary-color--100);
+    }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+    #advanced-settings .pf-c-expandable-section__toggle-icon,
+    .liveness-test-running::after {
+        animation: none;
+    }
+    
+    #advanced-settings .pf-c-expandable-section__toggle-icon {
+        transition: none;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .liveness-test-upload,
+    .liveness-test-results,
+    .pf-c-form__actions {
+        display: none;
+    }
+    
+    .pf-c-card {
+        break-inside: avoid;
+    }
+}

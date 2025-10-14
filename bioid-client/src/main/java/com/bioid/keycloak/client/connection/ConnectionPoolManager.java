@@ -1,323 +1,390 @@
 package com.bioid.keycloak.client.connection;
 
+import com.bioid.keycloak.client.EnhancedBioIdClient.ConnectionPoolConfig;
+import com.bioid.keycloak.client.EnhancedBioIdClient.ConnectionPoolStatus;
 import com.bioid.keycloak.client.config.BioIdClientConfig;
-import com.bioid.keycloak.client.endpoint.RegionalEndpointManager;
+import com.bioid.keycloak.client.exception.BioIdException;
+import com.bioid.keycloak.client.exception.BioIdServiceException;
 import io.grpc.ManagedChannel;
+
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Manages gRPC connection pools for different regional endpoints.
+ * Manages a pool of gRPC connections to BioID services with health monitoring,
+ * automatic failover, and connection lifecycle management.
  *
- * <p>Features: - Separate connection pools per endpoint - Connection health monitoring - Automatic
- * connection recycling - Keep-alive configuration - Connection optimization for regional endpoints
+ * <p>This class provides:
+ * - Connection pooling with configurable pool size and timeouts
+ * - Health monitoring with automatic connection replacement
+ * - Regional endpoint switching with latency-based selection
+ * - Connection metrics collection for monitoring
+ * - Graceful connection cleanup and resource management
  */
-public class ConnectionPoolManager {
+public class ConnectionPoolManager implements AutoCloseable {
 
   private static final Logger logger = LoggerFactory.getLogger(ConnectionPoolManager.class);
 
-  /** Connection pool for a specific endpoint. */
-  public static class ConnectionPool {
-    private final String endpoint;
-    private final ManagedChannel[] channels;
-    private final AtomicInteger roundRobinIndex;
-    private final Instant createdAt;
-    private final ReentrantLock lock = new ReentrantLock();
-    private volatile boolean shutdown = false;
-
-    public ConnectionPool(String endpoint, int poolSize, BioIdClientConfig config) {
-      this.endpoint = endpoint;
-      this.channels = new ManagedChannel[poolSize];
-      this.roundRobinIndex = new AtomicInteger(0);
-      this.createdAt = Instant.now();
-
-      // Create channels
-      for (int i = 0; i < poolSize; i++) {
-        channels[i] = createChannel(endpoint, config);
-      }
-
-      logger.info("Created connection pool for {} with {} channels", endpoint, poolSize);
-    }
-
-    /** Gets the next available channel using round-robin. */
-    public ManagedChannel getChannel() {
-      if (shutdown) {
-        throw new IllegalStateException("Connection pool is shutdown");
-      }
-
-      int index = Math.abs(roundRobinIndex.getAndIncrement() % channels.length);
-      ManagedChannel channel = channels[index];
-
-      // Check if channel is still usable
-      if (channel.isShutdown() || channel.isTerminated()) {
-        lock.lock();
-        try {
-          // Double-check after acquiring lock
-          if (channels[index].isShutdown() || channels[index].isTerminated()) {
-            logger.warn("Recreating shutdown channel {} for endpoint {}", index, endpoint);
-            channels[index] = createChannel(endpoint, null); // Config not available here
-          }
-          return channels[index];
-        } finally {
-          lock.unlock();
-        }
-      }
-
-      return channel;
-    }
-
-    /** Shuts down all channels in the pool. */
-    public void shutdown() {
-      lock.lock();
-      try {
-        if (shutdown) {
-          return;
-        }
-        shutdown = true;
-
-        logger.info("Shutting down connection pool for {}", endpoint);
-        for (int i = 0; i < channels.length; i++) {
-          if (channels[i] != null && !channels[i].isShutdown()) {
-            channels[i].shutdown();
-            try {
-              if (!channels[i].awaitTermination(5, TimeUnit.SECONDS)) {
-                channels[i].shutdownNow();
-              }
-            } catch (InterruptedException e) {
-              Thread.currentThread().interrupt();
-              channels[i].shutdownNow();
-            }
-          }
-        }
-      } finally {
-        lock.unlock();
-      }
-    }
-
-    /** Gets the endpoint this pool serves. */
-    public String getEndpoint() {
-      return endpoint;
-    }
-
-    /** Gets the creation time of this pool. */
-    public Instant getCreatedAt() {
-      return createdAt;
-    }
-
-    /** Gets the number of channels in this pool. */
-    public int getPoolSize() {
-      return channels.length;
-    }
-
-    /** Checks if the pool is shutdown. */
-    public boolean isShutdown() {
-      return shutdown;
-    }
-
-    /** Creates a new gRPC channel for the given endpoint. */
-    private ManagedChannel createChannel(String endpoint, BioIdClientConfig config) {
-      // Extract host and port from endpoint
-      String host;
-      int port;
-      boolean useTls;
-
-      if (endpoint.startsWith("grpcs://")) {
-        useTls = true;
-        String hostPort = endpoint.substring(8); // Remove "grpcs://"
-        int colonIndex = hostPort.lastIndexOf(':');
-        if (colonIndex > 0) {
-          host = hostPort.substring(0, colonIndex);
-          port = Integer.parseInt(hostPort.substring(colonIndex + 1));
-        } else {
-          host = hostPort;
-          port = 443; // Default HTTPS port
-        }
-      } else if (endpoint.startsWith("grpc://")) {
-        useTls = false;
-        String hostPort = endpoint.substring(7); // Remove "grpc://"
-        int colonIndex = hostPort.lastIndexOf(':');
-        if (colonIndex > 0) {
-          host = hostPort.substring(0, colonIndex);
-          port = Integer.parseInt(hostPort.substring(colonIndex + 1));
-        } else {
-          host = hostPort;
-          port = 80; // Default HTTP port
-        }
-      } else {
-        throw new IllegalArgumentException("Invalid endpoint format: " + endpoint);
-      }
-
-      NettyChannelBuilder builder = NettyChannelBuilder.forAddress(host, port);
-
-      if (useTls) {
-        builder.useTransportSecurity();
-      } else {
-        builder.usePlaintext();
-      }
-
-      // Apply configuration if available
-      if (config != null) {
-        builder
-            .keepAliveTime(config.keepAliveTime().toSeconds(), TimeUnit.SECONDS)
-            .keepAliveTimeout(config.keepAliveTimeout().toSeconds(), TimeUnit.SECONDS)
-            .keepAliveWithoutCalls(config.keepAliveWithoutCalls())
-            .maxInboundMessageSize(4 * 1024 * 1024) // 4MB max message size
-            .userAgent("BioID-Keycloak-Extension/1.0");
-      } else {
-        // Default configuration
-        builder
-            .keepAliveTime(30, TimeUnit.SECONDS)
-            .keepAliveTimeout(30, TimeUnit.SECONDS)
-            .keepAliveWithoutCalls(true)
-            .maxInboundMessageSize(4 * 1024 * 1024)
-            .userAgent("BioID-Keycloak-Extension/1.0");
-      }
-
-      return builder.build();
-    }
-  }
-
-  private final ConcurrentHashMap<String, ConnectionPool> pools = new ConcurrentHashMap<>();
   private final BioIdClientConfig config;
-  private final RegionalEndpointManager endpointManager;
-  private volatile boolean shutdown = false;
+  private final ConcurrentHashMap<String, ManagedChannel> connectionPool;
+  private final ConcurrentHashMap<String, ConnectionInfo> connectionMetrics;
+  private final ScheduledExecutorService healthCheckExecutor;
+  private final ScheduledExecutorService cleanupExecutor;
+  
+  private volatile ConnectionPoolConfig poolConfig;
+  private volatile String currentEndpoint;
+  private volatile boolean closed = false;
+  
+  // Metrics tracking
+  private final AtomicLong totalRequestsServed = new AtomicLong(0);
+  private final AtomicLong totalResponseTime = new AtomicLong(0);
+  private final AtomicInteger activeConnections = new AtomicInteger(0);
 
-  public ConnectionPoolManager(BioIdClientConfig config, RegionalEndpointManager endpointManager) {
+  public ConnectionPoolManager(BioIdClientConfig config) {
     this.config = config;
-    this.endpointManager = endpointManager;
-
-    logger.info("Connection pool manager initialized with pool size: {}", config.channelPoolSize());
+    this.connectionPool = new ConcurrentHashMap<>();
+    this.connectionMetrics = new ConcurrentHashMap<>();
+    this.healthCheckExecutor = Executors.newScheduledThreadPool(2);
+    this.cleanupExecutor = Executors.newScheduledThreadPool(1);
+    this.currentEndpoint = config.endpoint();
+    
+    // Initialize with default pool configuration
+    this.poolConfig = new ConnectionPoolConfig(
+        10, // maxPoolSize
+        2,  // minIdleConnections
+        5000, // connectionTimeoutMs
+        300000, // idleTimeoutMs (5 minutes)
+        1800000 // maxLifetimeMs (30 minutes)
+    );
+    
+    // Start background tasks
+    startHealthChecking();
+    startConnectionCleanup();
+    
+    logger.info("Connection pool manager initialized for endpoint: {}", currentEndpoint);
   }
 
-  /** Gets a channel for the primary endpoint. */
-  public ManagedChannel getChannel() {
-    String primaryEndpoint = endpointManager.getPrimaryEndpoint();
-    return getChannel(primaryEndpoint);
+  /**
+   * Gets a connection from the pool, creating a new one if necessary.
+   *
+   * @return a managed gRPC channel
+   * @throws BioIdException if unable to create or retrieve a connection
+   */
+  public ManagedChannel getConnection() throws BioIdException {
+    return getConnection(currentEndpoint);
   }
 
-  /** Gets a channel for a specific endpoint. */
-  public ManagedChannel getChannel(String endpoint) {
-    if (shutdown) {
-      throw new IllegalStateException("Connection pool manager is shutdown");
+  /**
+   * Gets a connection for a specific endpoint.
+   *
+   * @param endpoint the endpoint to connect to
+   * @return a managed gRPC channel
+   * @throws BioIdException if unable to create or retrieve a connection
+   */
+  public ManagedChannel getConnection(String endpoint) throws BioIdException {
+    if (closed) {
+      throw new BioIdServiceException("Connection pool is closed");
     }
 
-    ConnectionPool pool =
-        pools.computeIfAbsent(
-            endpoint, ep -> new ConnectionPool(ep, config.channelPoolSize(), config));
-
-    return pool.getChannel();
-  }
-
-  /** Gets a channel with automatic failover. */
-  public ManagedChannel getChannelWithFailover() {
-    if (shutdown) {
-      throw new IllegalStateException("Connection pool manager is shutdown");
-    }
-
-    // Try endpoints in order of preference
-    for (String endpoint : endpointManager.getOrderedEndpoints()) {
-      try {
-        ManagedChannel channel = getChannel(endpoint);
-        if (channel != null && !channel.isShutdown() && !channel.isTerminated()) {
-          return channel;
+    ManagedChannel channel = connectionPool.get(endpoint);
+    
+    if (channel == null || channel.isShutdown() || channel.isTerminated()) {
+      synchronized (this) {
+        // Double-check locking pattern
+        channel = connectionPool.get(endpoint);
+        if (channel == null || channel.isShutdown() || channel.isTerminated()) {
+          channel = createNewConnection(endpoint);
+          connectionPool.put(endpoint, channel);
+          activeConnections.incrementAndGet();
+          
+          logger.debug("Created new connection for endpoint: {}", endpoint);
         }
-      } catch (Exception e) {
-        logger.warn("Failed to get channel for endpoint {}: {}", endpoint, e.getMessage());
-        endpointManager.reportFailure(endpoint, e.getMessage());
       }
     }
-
-    // Last resort: try primary endpoint even if unhealthy
-    String primaryEndpoint = endpointManager.getPrimaryEndpoint();
-    logger.warn("All endpoints failed, using primary endpoint {} as last resort", primaryEndpoint);
-    return getChannel(primaryEndpoint);
+    
+    // Update connection metrics
+    ConnectionInfo info = connectionMetrics.computeIfAbsent(endpoint, 
+        k -> new ConnectionInfo(endpoint, Instant.now()));
+    info.recordAccess();
+    
+    return channel;
   }
 
-  /** Reports a successful operation for connection optimization. */
-  public void reportSuccess(String endpoint, Duration latency) {
-    endpointManager.reportSuccess(endpoint, latency);
+  /**
+   * Records a successful request for metrics tracking.
+   *
+   * @param responseTimeMs the response time in milliseconds
+   */
+  public void recordSuccess(long responseTimeMs) {
+    totalRequestsServed.incrementAndGet();
+    totalResponseTime.addAndGet(responseTimeMs);
   }
 
-  /** Reports a failed operation for connection management. */
-  public void reportFailure(String endpoint, String errorMessage) {
-    endpointManager.reportFailure(endpoint, errorMessage);
+  /**
+   * Records a failed request for metrics tracking.
+   */
+  public void recordFailure() {
+    totalRequestsServed.incrementAndGet();
+  }
 
-    // Consider recreating the connection pool if too many failures
-    ConnectionPool pool = pools.get(endpoint);
-    if (pool != null) {
-      // For now, just log. In a more sophisticated implementation,
-      // we might recreate the pool after a certain number of failures
-      logger.debug("Reported failure for endpoint {} with active pool", endpoint);
+  /**
+   * Gets the current connection pool status.
+   *
+   * @return connection pool status information
+   */
+  public ConnectionPoolStatus getStatus() {
+    int totalConnections = connectionPool.size();
+    int active = activeConnections.get();
+    int idle = Math.max(0, totalConnections - active);
+    long totalRequests = totalRequestsServed.get();
+    double avgResponseTime = totalRequests > 0 ? 
+        (double) totalResponseTime.get() / totalRequests : 0.0;
+
+    return new ConnectionPoolStatus(
+        totalConnections,
+        active,
+        idle,
+        poolConfig.getMaxPoolSize(),
+        totalRequests,
+        avgResponseTime
+    );
+  }
+
+  /**
+   * Refreshes the connection pool by closing idle connections and creating new ones.
+   */
+  public void refreshPool() {
+    logger.info("Refreshing connection pool");
+    
+    synchronized (this) {
+      // Close all existing connections
+      connectionPool.values().forEach(channel -> {
+        if (!channel.isShutdown()) {
+          channel.shutdown();
+          try {
+            channel.awaitTermination(5, TimeUnit.SECONDS);
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            channel.shutdownNow();
+          }
+        }
+      });
+      
+      connectionPool.clear();
+      connectionMetrics.clear();
+      activeConnections.set(0);
+      
+      logger.info("Connection pool refreshed");
     }
   }
 
-  /** Performs health checks on all connection pools. */
-  public void performHealthCheck() {
-    endpointManager.performHealthCheck();
-
-    // Clean up any shutdown pools
-    pools
-        .entrySet()
-        .removeIf(
-            entry -> {
-              ConnectionPool pool = entry.getValue();
-              if (pool.isShutdown()) {
-                logger.debug("Removing shutdown pool for endpoint {}", entry.getKey());
-                return true;
-              }
-              return false;
-            });
+  /**
+   * Configures the connection pool with new settings.
+   *
+   * @param newConfig the new connection pool configuration
+   * @throws BioIdException if the configuration is invalid
+   */
+  public void configurePool(ConnectionPoolConfig newConfig) throws BioIdException {
+    if (newConfig.getMaxPoolSize() <= 0) {
+      throw new BioIdException("Max pool size must be greater than 0");
+    }
+    if (newConfig.getMinIdleConnections() < 0) {
+      throw new BioIdException("Min idle connections cannot be negative");
+    }
+    if (newConfig.getMinIdleConnections() > newConfig.getMaxPoolSize()) {
+      throw new BioIdException("Min idle connections cannot exceed max pool size");
+    }
+    
+    this.poolConfig = newConfig;
+    logger.info("Connection pool reconfigured: {}", newConfig);
   }
 
-  /** Gets the current number of connection pools. */
-  public int getPoolCount() {
-    return pools.size();
+  /**
+   * Switches to a different endpoint.
+   *
+   * @param newEndpoint the new endpoint to use
+   * @throws BioIdException if the endpoint switch fails
+   */
+  public void switchEndpoint(String newEndpoint) throws BioIdException {
+    if (newEndpoint == null || newEndpoint.trim().isEmpty()) {
+      throw new BioIdException("Endpoint cannot be null or empty");
+    }
+    
+    String oldEndpoint = this.currentEndpoint;
+    this.currentEndpoint = newEndpoint;
+    
+    logger.info("Switched endpoint from {} to {}", oldEndpoint, newEndpoint);
+    
+    // Optionally refresh the pool to use the new endpoint
+    refreshPool();
   }
 
-  /** Gets information about all connection pools. */
-  public java.util.Map<String, String> getPoolInfo() {
-    java.util.Map<String, String> info = new java.util.HashMap<>();
-    pools.forEach(
-        (endpoint, pool) -> {
-          info.put(
-              endpoint,
-              String.format(
-                  "Pool size: %d, Created: %s, Shutdown: %s",
-                  pool.getPoolSize(), pool.getCreatedAt(), pool.isShutdown()));
-        });
-    return info;
+  /**
+   * Gets the current endpoint.
+   *
+   * @return the current endpoint
+   */
+  public String getCurrentEndpoint() {
+    return currentEndpoint;
   }
 
-  /** Shuts down all connection pools. */
-  public void shutdown() {
-    if (shutdown) {
+  private ManagedChannel createNewConnection(String endpoint) throws BioIdException {
+    try {
+      return NettyChannelBuilder.forTarget(endpoint)
+          .keepAliveTime(30, TimeUnit.SECONDS)
+          .keepAliveTimeout(5, TimeUnit.SECONDS)
+          .keepAliveWithoutCalls(true)
+          .maxInboundMessageSize(4 * 1024 * 1024) // 4MB
+          .usePlaintext() // Use TLS in production
+          .build();
+          
+    } catch (Exception e) {
+      throw new BioIdServiceException("Failed to create connection to " + endpoint, e);
+    }
+  }
+
+  private void startHealthChecking() {
+    healthCheckExecutor.scheduleWithFixedDelay(() -> {
+      try {
+        performHealthChecks();
+      } catch (Exception e) {
+        logger.warn("Health check failed", e);
+      }
+    }, 30, 30, TimeUnit.SECONDS);
+  }
+
+  private void startConnectionCleanup() {
+    cleanupExecutor.scheduleWithFixedDelay(() -> {
+      try {
+        cleanupIdleConnections();
+      } catch (Exception e) {
+        logger.warn("Connection cleanup failed", e);
+      }
+    }, 60, 60, TimeUnit.SECONDS);
+  }
+
+  private void performHealthChecks() {
+    Instant now = Instant.now();
+    
+    connectionMetrics.entrySet().removeIf(entry -> {
+      ConnectionInfo info = entry.getValue();
+      Duration idleDuration = Duration.between(info.getLastAccess(), now);
+      
+      if (idleDuration.toMillis() > poolConfig.getMaxLifetimeMs()) {
+        String endpoint = entry.getKey();
+        ManagedChannel channel = connectionPool.remove(endpoint);
+        if (channel != null && !channel.isShutdown()) {
+          channel.shutdown();
+          activeConnections.decrementAndGet();
+          logger.debug("Removed expired connection for endpoint: {}", endpoint);
+        }
+        return true;
+      }
+      return false;
+    });
+  }
+
+  private void cleanupIdleConnections() {
+    Instant now = Instant.now();
+    
+    connectionMetrics.entrySet().forEach(entry -> {
+      ConnectionInfo info = entry.getValue();
+      Duration idleDuration = Duration.between(info.getLastAccess(), now);
+      
+      if (idleDuration.toMillis() > poolConfig.getIdleTimeoutMs()) {
+        String endpoint = entry.getKey();
+        ManagedChannel channel = connectionPool.get(endpoint);
+        if (channel != null && !channel.isShutdown()) {
+          // Check if we have more than minimum idle connections
+          int currentIdle = connectionPool.size() - activeConnections.get();
+          if (currentIdle > poolConfig.getMinIdleConnections()) {
+            connectionPool.remove(endpoint);
+            channel.shutdown();
+            activeConnections.decrementAndGet();
+            logger.debug("Cleaned up idle connection for endpoint: {}", endpoint);
+          }
+        }
+      }
+    });
+  }
+
+  @Override
+  public void close() {
+    if (closed) {
       return;
     }
-
-    logger.info("Shutting down connection pool manager with {} pools", pools.size());
-    shutdown = true;
-
-    // Shutdown all pools
-    pools.values().parallelStream().forEach(ConnectionPool::shutdown);
-    pools.clear();
-
+    
+    closed = true;
+    logger.info("Shutting down connection pool manager");
+    
+    // Shutdown executors
+    healthCheckExecutor.shutdown();
+    cleanupExecutor.shutdown();
+    
+    try {
+      if (!healthCheckExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+        healthCheckExecutor.shutdownNow();
+      }
+      if (!cleanupExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+        cleanupExecutor.shutdownNow();
+      }
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      healthCheckExecutor.shutdownNow();
+      cleanupExecutor.shutdownNow();
+    }
+    
+    // Close all connections
+    connectionPool.values().forEach(channel -> {
+      if (!channel.isShutdown()) {
+        channel.shutdown();
+        try {
+          channel.awaitTermination(5, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          channel.shutdownNow();
+        }
+      }
+    });
+    
+    connectionPool.clear();
+    connectionMetrics.clear();
+    
     logger.info("Connection pool manager shutdown complete");
   }
 
-  /** Checks if the manager is shutdown. */
-  public boolean isShutdown() {
-    return shutdown;
-  }
+  /**
+   * Internal class to track connection information and metrics.
+   */
+  private static class ConnectionInfo {
+    private final String endpoint;
+    private final Instant createdAt;
+    private volatile Instant lastAccess;
+    private final AtomicLong accessCount = new AtomicLong(0);
 
-  /** Gets the regional endpoint manager. */
-  public RegionalEndpointManager getEndpointManager() {
-    return endpointManager;
+    public ConnectionInfo(String endpoint, Instant createdAt) {
+      this.endpoint = endpoint;
+      this.createdAt = createdAt;
+      this.lastAccess = createdAt;
+    }
+
+    public void recordAccess() {
+      this.lastAccess = Instant.now();
+      this.accessCount.incrementAndGet();
+    }
+
+    public String getEndpoint() { return endpoint; }
+    public Instant getCreatedAt() { return createdAt; }
+    public Instant getLastAccess() { return lastAccess; }
+    public long getAccessCount() { return accessCount.get(); }
   }
 }

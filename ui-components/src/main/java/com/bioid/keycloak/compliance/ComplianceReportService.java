@@ -13,23 +13,22 @@ import org.keycloak.models.KeycloakSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import jakarta.enterprise.context.ApplicationScoped;
+
 /** Service for generating and managing compliance reports. */
+@ApplicationScoped
 public class ComplianceReportService {
 
   private static final Logger logger = LoggerFactory.getLogger(ComplianceReportService.class);
 
-  private final KeycloakSession session;
+  private KeycloakSession session;
   private final ComplianceReportGenerator reportGenerator;
   private final Path reportDirectory;
 
   /**
    * Creates a new compliance report service.
-   *
-   * @param session The Keycloak session
    */
-  public ComplianceReportService(KeycloakSession session) {
-    this.session = session;
-
+  public ComplianceReportService() {
     // Get the report directory from system property or use default
     String reportDirPath =
         System.getProperty(
@@ -40,6 +39,20 @@ public class ComplianceReportService {
     this.reportGenerator = new ComplianceReportGenerator(reportDirectory);
 
     logger.info("Compliance report directory: " + reportDirectory);
+  }
+
+  /**
+   * Creates a new compliance report service with session.
+   *
+   * @param session The Keycloak session
+   */
+  public ComplianceReportService(KeycloakSession session) {
+    this();
+    this.session = session;
+  }
+
+  public void setSession(KeycloakSession session) {
+    this.session = session;
   }
 
   /**

@@ -196,6 +196,7 @@ public class PerformanceTest {
     // Test successful operation
     try (PerformanceMonitor.TimingContext context = performanceMonitor.startTiming(operationName)) {
       // Simulate work - context is used implicitly for timing
+      assertNotNull(context); // Suppress warning - context is used for auto-timing
       Thread.sleep(50);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
@@ -306,6 +307,7 @@ public class PerformanceTest {
     // Simulate cache miss with performance monitoring
     try (PerformanceMonitor.TimingContext context = performanceMonitor.startTiming(operationName)) {
       // Context is used implicitly for timing cache operations
+      assertNotNull(context); // Suppress warning - context is used for auto-timing
       var result = credentialCache.get(cacheKey, String.class);
       if (!result.isPresent()) {
         // Simulate database lookup
@@ -319,6 +321,7 @@ public class PerformanceTest {
     // Simulate cache hit with performance monitoring
     try (PerformanceMonitor.TimingContext context = performanceMonitor.startTiming(operationName)) {
       // Context is used implicitly for timing cache hit operations
+      assertNotNull(context); // Suppress warning - context is used for auto-timing
       var result = credentialCache.get(cacheKey, String.class);
       assertTrue(result.isPresent(), "Should be cache hit");
     }

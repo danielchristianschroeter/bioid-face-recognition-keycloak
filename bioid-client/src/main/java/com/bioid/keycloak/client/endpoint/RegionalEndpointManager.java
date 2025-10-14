@@ -1,440 +1,385 @@
 package com.bioid.keycloak.client.endpoint;
 
+import com.bioid.keycloak.client.config.BioIdClientConfig;
+import com.bioid.keycloak.client.exception.BioIdException;
+
+import com.bioid.keycloak.client.health.ServiceHealthStatus;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Manages regional BioID endpoints with health monitoring and automatic failover.
+ * Manages regional endpoints for BioID services with automatic failover,
+ * latency-based selection, and health monitoring.
  *
- * <p>Features: - Regional endpoint selection (EU, US, SA) - Health monitoring with automatic
- * failover - Latency-based endpoint selection - Data residency compliance - Connection optimization
+ * <p>This class provides:
+ * - Regional endpoint discovery and management
+ * - Latency-based endpoint selection for optimal performance
+ * - Automatic failover to healthy regions
+ * - Health monitoring and endpoint status tracking
+ * - Load balancing across multiple regions
  */
-public class RegionalEndpointManager {
+public class RegionalEndpointManager implements AutoCloseable {
 
   private static final Logger logger = LoggerFactory.getLogger(RegionalEndpointManager.class);
 
-  // Regional endpoints
-  public static final String EU_ENDPOINT = "grpcs://grpc.bws-eu.bioid.com:443";
-  public static final String US_ENDPOINT = "grpcs://grpc.bws-us.bioid.com:443";
-  public static final String SA_ENDPOINT = "grpcs://grpc.bws-sa.bioid.com:443";
+  private final BioIdClientConfig config;
+  private final Map<String, RegionInfo> regions;
+  private final ScheduledExecutorService healthCheckExecutor;
+  private volatile String currentRegion;
+  private volatile boolean closed = false;
 
-  // Endpoint regions
-  public enum Region {
-    EU("Europe", EU_ENDPOINT),
-    US("United States", US_ENDPOINT),
-    SA("South America", SA_ENDPOINT);
+  // Default regional endpoints - in production these would be configured
+  private static final Map<String, String> DEFAULT_REGIONS = Map.of(
+      "us-east-1", "bioid-us-east-1.example.com:443",
+      "us-west-2", "bioid-us-west-2.example.com:443",
+      "eu-west-1", "bioid-eu-west-1.example.com:443",
+      "eu-central-1", "bioid-eu-central-1.example.com:443",
+      "ap-southeast-1", "bioid-ap-southeast-1.example.com:443"
+  );
 
-    private final String displayName;
-    private final String endpoint;
-
-    Region(String displayName, String endpoint) {
-      this.displayName = displayName;
-      this.endpoint = endpoint;
-    }
-
-    public String getDisplayName() {
-      return displayName;
-    }
-
-    public String getEndpoint() {
-      return endpoint;
-    }
+  public RegionalEndpointManager(BioIdClientConfig config) {
+    this.config = config;
+    this.regions = new ConcurrentHashMap<>();
+    this.healthCheckExecutor = Executors.newScheduledThreadPool(3);
+    
+    // Initialize regions
+    initializeRegions();
+    
+    // Determine initial region based on configuration or auto-selection
+    this.currentRegion = determineInitialRegion();
+  }
+  
+  /**
+   * Initialize the endpoint manager and start background tasks.
+   * This should be called after construction to avoid 'this' escape.
+   */
+  public void initialize() {
+    // Start health monitoring
+    startHealthMonitoring();
+    
+    logger.info("Regional endpoint manager initialized with {} regions, current: {}", 
+        regions.size(), currentRegion);
   }
 
-  // Endpoint health status
-  public static class EndpointHealth {
-    private final String endpoint;
-    private final boolean healthy;
-    private final Duration latency;
-    private final Instant lastCheck;
-    private final String errorMessage;
-    private final int consecutiveFailures;
-
-    public EndpointHealth(
-        String endpoint,
-        boolean healthy,
-        Duration latency,
-        Instant lastCheck,
-        String errorMessage,
-        int consecutiveFailures) {
-      this.endpoint = endpoint;
-      this.healthy = healthy;
-      this.latency = latency;
-      this.lastCheck = lastCheck;
-      this.errorMessage = errorMessage;
-      this.consecutiveFailures = consecutiveFailures;
-    }
-
-    public String getEndpoint() {
-      return endpoint;
-    }
-
-    public boolean isHealthy() {
-      return healthy;
-    }
-
-    public Duration getLatency() {
-      return latency;
-    }
-
-    public Instant getLastCheck() {
-      return lastCheck;
-    }
-
-    public String getErrorMessage() {
-      return errorMessage;
-    }
-
-    public int getConsecutiveFailures() {
-      return consecutiveFailures;
-    }
-
-    @Override
-    public String toString() {
-      return String.format(
-          "EndpointHealth{endpoint='%s', healthy=%s, latency=%s, consecutiveFailures=%d}",
-          endpoint, healthy, latency, consecutiveFailures);
-    }
+  /**
+   * Gets the list of available regions.
+   *
+   * @return list of region identifiers
+   */
+  public List<String> getAvailableRegions() {
+    return new ArrayList<>(regions.keySet());
   }
 
-  private final Map<String, EndpointHealth> endpointHealth = new ConcurrentHashMap<>();
-  private final Map<String, AtomicInteger> failureCounters = new ConcurrentHashMap<>();
-  private final AtomicReference<String> primaryEndpoint = new AtomicReference<>();
-  private final List<String> availableEndpoints;
-  private final Duration healthCheckInterval;
-
-  @SuppressWarnings("unused") // Reserved for future health check implementation
-  private final Duration healthCheckTimeout;
-
-  private final int maxConsecutiveFailures;
-  private final Region preferredRegion;
-  private final boolean dataResidencyRequired;
-
-  // Health check configuration
-  private static final Duration DEFAULT_HEALTH_CHECK_INTERVAL = Duration.ofSeconds(30);
-  private static final Duration DEFAULT_HEALTH_CHECK_TIMEOUT = Duration.ofSeconds(5);
-  private static final int DEFAULT_MAX_CONSECUTIVE_FAILURES = 3;
-
-  public RegionalEndpointManager(Region preferredRegion, boolean dataResidencyRequired) {
-    this(
-        preferredRegion,
-        dataResidencyRequired,
-        DEFAULT_HEALTH_CHECK_INTERVAL,
-        DEFAULT_HEALTH_CHECK_TIMEOUT,
-        DEFAULT_MAX_CONSECUTIVE_FAILURES);
+  /**
+   * Gets the currently active region.
+   *
+   * @return current region identifier
+   */
+  public String getCurrentRegion() {
+    return currentRegion;
   }
 
-  public RegionalEndpointManager(
-      Region preferredRegion,
-      boolean dataResidencyRequired,
-      Duration healthCheckInterval,
-      Duration healthCheckTimeout,
-      int maxConsecutiveFailures) {
-    this.preferredRegion = preferredRegion;
-    this.dataResidencyRequired = dataResidencyRequired;
-    this.healthCheckInterval = healthCheckInterval;
-    this.healthCheckTimeout = healthCheckTimeout;
-    this.maxConsecutiveFailures = maxConsecutiveFailures;
-
-    // Initialize available endpoints based on data residency requirements
-    if (dataResidencyRequired) {
-      // Only use preferred region for data residency compliance
-      this.availableEndpoints = Collections.singletonList(preferredRegion.getEndpoint());
-      logger.info(
-          "Data residency required, using only {} region: {}",
-          preferredRegion.getDisplayName(),
-          preferredRegion.getEndpoint());
-    } else {
-      // Use all regions with preferred region first
-      this.availableEndpoints = new ArrayList<>();
-      this.availableEndpoints.add(preferredRegion.getEndpoint());
-      for (Region region : Region.values()) {
-        if (region != preferredRegion) {
-          this.availableEndpoints.add(region.getEndpoint());
-        }
-      }
-      logger.info(
-          "Using all regions with {} as preferred: {}",
-          preferredRegion.getDisplayName(),
-          availableEndpoints);
-    }
-
-    // Initialize health status and failure counters
-    for (String endpoint : availableEndpoints) {
-      endpointHealth.put(
-          endpoint, new EndpointHealth(endpoint, true, Duration.ZERO, Instant.now(), null, 0));
-      failureCounters.put(endpoint, new AtomicInteger(0));
-    }
-
-    // Set initial primary endpoint
-    primaryEndpoint.set(preferredRegion.getEndpoint());
-
-    logger.info(
-        "Regional endpoint manager initialized with preferred region: {}, "
-            + "data residency required: {}, available endpoints: {}",
-        preferredRegion.getDisplayName(),
-        dataResidencyRequired,
-        availableEndpoints.size());
+  /**
+   * Gets the endpoint URL for the current region.
+   *
+   * @return current endpoint URL
+   */
+  public String getCurrentEndpoint() {
+    RegionInfo region = regions.get(currentRegion);
+    return region != null ? region.getEndpoint() : config.endpoint();
   }
 
-  /** Gets the current primary endpoint for new connections. */
-  public String getPrimaryEndpoint() {
-    String current = primaryEndpoint.get();
-
-    // Check if current primary is still healthy
-    EndpointHealth health = endpointHealth.get(current);
-    if (health != null && health.isHealthy()) {
-      return current;
+  /**
+   * Switches to a specific region.
+   *
+   * @param regionId the region to switch to
+   * @throws BioIdException if the region is not available or unhealthy
+   */
+  public void switchToRegion(String regionId) throws BioIdException {
+    if (!regions.containsKey(regionId)) {
+      throw new BioIdException("Region not available: " + regionId);
     }
 
-    // Find the best available endpoint
-    String bestEndpoint = selectBestEndpoint();
-    if (bestEndpoint != null && !bestEndpoint.equals(current)) {
-      logger.info("Switching primary endpoint from {} to {}", current, bestEndpoint);
-      primaryEndpoint.set(bestEndpoint);
-      return bestEndpoint;
+    RegionInfo region = regions.get(regionId);
+    if (region.getHealthStatus().getState() == ServiceHealthStatus.HealthState.UNHEALTHY) {
+      throw new BioIdException("Region is unhealthy: " + regionId);
     }
 
-    // Return current even if unhealthy (last resort)
-    return current;
+    String previousRegion = this.currentRegion;
+    this.currentRegion = regionId;
+    
+    logger.info("Switched from region {} to {}", previousRegion, regionId);
   }
 
-  /** Gets all available endpoints ordered by preference and health. */
-  public List<String> getOrderedEndpoints() {
-    List<String> ordered = new ArrayList<>();
+  /**
+   * Automatically selects the optimal region based on latency and health.
+   *
+   * @return the selected region identifier
+   * @throws BioIdException if no suitable region is available
+   */
+  public String selectOptimalRegion() throws BioIdException {
+    List<RegionInfo> healthyRegions = regions.values().stream()
+        .filter(region -> region.getHealthStatus().getState() != ServiceHealthStatus.HealthState.UNHEALTHY)
+        .collect(Collectors.toList());
 
-    // Add primary endpoint first if healthy
-    String primary = getPrimaryEndpoint();
-    EndpointHealth primaryHealth = endpointHealth.get(primary);
-    if (primaryHealth != null && primaryHealth.isHealthy()) {
-      ordered.add(primary);
+    if (healthyRegions.isEmpty()) {
+      throw new BioIdException("No healthy regions available");
     }
 
-    // Add other healthy endpoints sorted by latency
-    availableEndpoints.stream()
-        .filter(endpoint -> !endpoint.equals(primary))
-        .filter(
-            endpoint -> {
-              EndpointHealth health = endpointHealth.get(endpoint);
-              return health != null && health.isHealthy();
-            })
-        .sorted(
-            (e1, e2) -> {
-              EndpointHealth h1 = endpointHealth.get(e1);
-              EndpointHealth h2 = endpointHealth.get(e2);
-              return h1.getLatency().compareTo(h2.getLatency());
-            })
-        .forEach(ordered::add);
+    // Sort by latency (ascending) and prefer healthy over degraded
+    RegionInfo optimal = healthyRegions.stream()
+        .min((r1, r2) -> {
+          // First compare by health state (healthy < degraded)
+          int healthComparison = r1.getHealthStatus().getState().compareTo(r2.getHealthStatus().getState());
+          if (healthComparison != 0) {
+            return healthComparison;
+          }
+          // Then compare by latency
+          return Long.compare(r1.getLatencyMs(), r2.getLatencyMs());
+        })
+        .orElseThrow(() -> new BioIdException("Unable to select optimal region"));
 
-    // Add unhealthy endpoints as last resort
-    availableEndpoints.stream()
-        .filter(
-            endpoint -> {
-              EndpointHealth health = endpointHealth.get(endpoint);
-              return health == null || !health.isHealthy();
-            })
-        .forEach(
-            endpoint -> {
-              if (!ordered.contains(endpoint)) {
-                ordered.add(endpoint);
-              }
-            });
+    String selectedRegion = optimal.getRegionId();
+    if (!selectedRegion.equals(currentRegion)) {
+      switchToRegion(selectedRegion);
+    }
 
-    return ordered;
+    return selectedRegion;
   }
 
-  /** Reports a successful operation for an endpoint. */
-  public void reportSuccess(String endpoint, Duration latency) {
-    if (!availableEndpoints.contains(endpoint)) {
-      return;
-    }
-
-    // Reset failure counter
-    AtomicInteger counter = failureCounters.get(endpoint);
-    if (counter != null) {
-      int previousFailures = counter.getAndSet(0);
-      if (previousFailures > 0) {
-        logger.info(
-            "Endpoint {} recovered after {} consecutive failures", endpoint, previousFailures);
-      }
-    }
-
-    // Update health status
-    endpointHealth.put(
-        endpoint, new EndpointHealth(endpoint, true, latency, Instant.now(), null, 0));
-
-    logger.debug(
-        "Reported success for endpoint {} with latency {}ms", endpoint, latency.toMillis());
-  }
-
-  /** Reports a failure for an endpoint. */
-  public void reportFailure(String endpoint, String errorMessage) {
-    if (!availableEndpoints.contains(endpoint)) {
-      return;
-    }
-
-    // Increment failure counter
-    AtomicInteger counter = failureCounters.get(endpoint);
-    int failures = counter != null ? counter.incrementAndGet() : 1;
-
-    // Update health status
-    boolean healthy = failures < maxConsecutiveFailures;
-    endpointHealth.put(
-        endpoint,
-        new EndpointHealth(
-            endpoint, healthy, Duration.ZERO, Instant.now(), errorMessage, failures));
-
-    if (!healthy) {
-      logger.warn(
-          "Endpoint {} marked as unhealthy after {} consecutive failures. Last error: {}",
-          endpoint,
-          failures,
-          errorMessage);
-
-      // Trigger failover if this was the primary endpoint
-      if (endpoint.equals(primaryEndpoint.get())) {
-        String newPrimary = selectBestEndpoint();
-        if (newPrimary != null && !newPrimary.equals(endpoint)) {
-          logger.info("Failing over from {} to {}", endpoint, newPrimary);
-          primaryEndpoint.set(newPrimary);
-        }
-      }
-    } else {
-      logger.debug(
-          "Reported failure for endpoint {} ({}/{}): {}",
-          endpoint,
-          failures,
-          maxConsecutiveFailures,
-          errorMessage);
-    }
-  }
-
-  /** Performs health check on all endpoints. */
-  public void performHealthCheck() {
-    logger.debug("Performing health check on {} endpoints", availableEndpoints.size());
-
-    for (String endpoint : availableEndpoints) {
+  /**
+   * Asynchronously selects the optimal region.
+   *
+   * @return CompletableFuture containing the selected region identifier
+   */
+  public CompletableFuture<String> selectOptimalRegionAsync() {
+    return CompletableFuture.supplyAsync(() -> {
       try {
-        // Simulate health check (in real implementation, this would ping the endpoint)
-        Duration latency = simulateHealthCheck(endpoint);
-        reportSuccess(endpoint, latency);
+        return selectOptimalRegion();
+      } catch (BioIdException e) {
+        throw new RuntimeException(e);
+      }
+    }, healthCheckExecutor);
+  }
+
+  /**
+   * Performs latency tests to all regions and updates their metrics.
+   *
+   * @return CompletableFuture that completes when all tests are done
+   */
+  public CompletableFuture<Void> performLatencyTests() {
+    List<CompletableFuture<Void>> futures = regions.values().stream()
+        .map(this::testRegionLatency)
+        .collect(Collectors.toList());
+
+    return CompletableFuture.allOf(futures.toArray(new CompletableFuture<?>[0]));
+  }
+
+  /**
+   * Gets health status for a specific region.
+   *
+   * @param regionId the region identifier
+   * @return health status, or null if region doesn't exist
+   */
+  public ServiceHealthStatus getRegionHealth(String regionId) {
+    RegionInfo region = regions.get(regionId);
+    return region != null ? region.getHealthStatus() : null;
+  }
+
+  /**
+   * Gets latency information for a specific region.
+   *
+   * @param regionId the region identifier
+   * @return latency in milliseconds, or -1 if region doesn't exist
+   */
+  public long getRegionLatency(String regionId) {
+    RegionInfo region = regions.get(regionId);
+    return region != null ? region.getLatencyMs() : -1;
+  }
+
+  private void initializeRegions() {
+    // In production, this would load from configuration or service discovery
+    DEFAULT_REGIONS.forEach((regionId, endpoint) -> {
+      RegionInfo regionInfo = new RegionInfo(regionId, endpoint);
+      regions.put(regionId, regionInfo);
+    });
+
+    // Add the configured endpoint as the default region if not already present
+    if (!regions.values().stream().anyMatch(r -> r.getEndpoint().equals(config.endpoint()))) {
+      regions.put("default", new RegionInfo("default", config.endpoint()));
+    }
+  }
+
+  private String determineInitialRegion() {
+    // Try to find a region matching the configured endpoint
+    return regions.entrySet().stream()
+        .filter(entry -> entry.getValue().getEndpoint().equals(config.endpoint()))
+        .map(Map.Entry::getKey)
+        .findFirst()
+        .orElse("default");
+  }
+
+  private void startHealthMonitoring() {
+    // Perform initial health checks
+    performLatencyTests();
+
+    // Schedule periodic health checks
+    healthCheckExecutor.scheduleWithFixedDelay(() -> {
+      try {
+        performLatencyTests().join();
       } catch (Exception e) {
-        reportFailure(endpoint, e.getMessage());
+        logger.warn("Health monitoring failed", e);
       }
-    }
+    }, 60, 60, TimeUnit.SECONDS);
   }
 
-  /** Gets current health status for all endpoints. */
-  public Map<String, EndpointHealth> getHealthStatus() {
-    return new HashMap<>(endpointHealth);
-  }
-
-  /** Gets the preferred region. */
-  public Region getPreferredRegion() {
-    return preferredRegion;
-  }
-
-  /** Checks if data residency is required. */
-  public boolean isDataResidencyRequired() {
-    return dataResidencyRequired;
-  }
-
-  /** Gets health check interval. */
-  public Duration getHealthCheckInterval() {
-    return healthCheckInterval;
-  }
-
-  /** Selects the best available endpoint based on health and latency. */
-  private String selectBestEndpoint() {
-    // First, try to find a healthy endpoint
-    Optional<String> healthyEndpoint =
-        availableEndpoints.stream()
-            .filter(
-                endpoint -> {
-                  EndpointHealth health = endpointHealth.get(endpoint);
-                  return health != null && health.isHealthy();
-                })
-            .min(
-                (e1, e2) -> {
-                  EndpointHealth h1 = endpointHealth.get(e1);
-                  EndpointHealth h2 = endpointHealth.get(e2);
-
-                  // Prefer the preferred region if both are healthy
-                  if (e1.equals(preferredRegion.getEndpoint())) return -1;
-                  if (e2.equals(preferredRegion.getEndpoint())) return 1;
-
-                  // Otherwise, prefer lower latency
-                  return h1.getLatency().compareTo(h2.getLatency());
-                });
-
-    if (healthyEndpoint.isPresent()) {
-      return healthyEndpoint.get();
-    }
-
-    // If no healthy endpoints, return the one with fewest failures
-    return availableEndpoints.stream()
-        .min(
-            (e1, e2) -> {
-              EndpointHealth h1 = endpointHealth.get(e1);
-              EndpointHealth h2 = endpointHealth.get(e2);
-              return Integer.compare(h1.getConsecutiveFailures(), h2.getConsecutiveFailures());
-            })
-        .orElse(preferredRegion.getEndpoint());
-  }
-
-  /** Simulates a health check (placeholder for actual implementation). */
-  private Duration simulateHealthCheck(String endpoint) throws Exception {
-    // In real implementation, this would:
-    // 1. Create a gRPC channel to the endpoint
-    // 2. Send a health check request
-    // 3. Measure the response time
-    // 4. Return the latency or throw an exception
-
-    // For now, simulate random latency and occasional failures
-    Random random = new Random();
-    if (random.nextDouble() < 0.1) { // 10% chance of failure
-      throw new Exception("Simulated health check failure");
-    }
-
-    // Simulate latency between 50-200ms
-    long latencyMs = 50 + random.nextInt(150);
-    return Duration.ofMillis(latencyMs);
-  }
-
-  /** Gets region from endpoint URL. */
-  public static Region getRegionFromEndpoint(String endpoint) {
-    for (Region region : Region.values()) {
-      if (region.getEndpoint().equals(endpoint)) {
-        return region;
+  private CompletableFuture<Void> testRegionLatency(RegionInfo region) {
+    return CompletableFuture.runAsync(() -> {
+      try {
+        Instant start = Instant.now();
+        
+        // Perform a simple connectivity test (in production, this would be a lightweight gRPC call)
+        boolean isReachable = performConnectivityTest(region.getEndpoint());
+        
+        Instant end = Instant.now();
+        long latencyMs = Duration.between(start, end).toMillis();
+        
+        // Update region metrics
+        region.updateLatency(latencyMs);
+        
+        ServiceHealthStatus.HealthState healthState;
+        String statusMessage;
+        
+        if (!isReachable) {
+          healthState = ServiceHealthStatus.HealthState.UNHEALTHY;
+          statusMessage = "Region is not reachable";
+          latencyMs = Long.MAX_VALUE; // Set high latency for unreachable regions
+        } else if (latencyMs > 2000) {
+          healthState = ServiceHealthStatus.HealthState.DEGRADED;
+          statusMessage = "High latency detected";
+        } else {
+          healthState = ServiceHealthStatus.HealthState.HEALTHY;
+          statusMessage = "Region is healthy";
+        }
+        
+        ServiceHealthStatus healthStatus = new ServiceHealthStatus.Builder()
+            .setState(healthState)
+            .setEndpoint(region.getEndpoint())
+            .setRegion(region.getRegionId())
+            .setResponseTimeMs(latencyMs)
+            .setLastHealthCheck(Instant.now())
+            .setStatusMessage(statusMessage)
+            .build();
+        
+        region.updateHealthStatus(healthStatus);
+        
+        logger.debug("Health check completed for region {}: {} ({}ms)", 
+            region.getRegionId(), healthState, latencyMs);
+            
+      } catch (Exception e) {
+        logger.warn("Health check failed for region {}: {}", region.getRegionId(), e.getMessage());
+        
+        ServiceHealthStatus unhealthyStatus = new ServiceHealthStatus.Builder()
+            .setState(ServiceHealthStatus.HealthState.UNHEALTHY)
+            .setEndpoint(region.getEndpoint())
+            .setRegion(region.getRegionId())
+            .setResponseTimeMs(Long.MAX_VALUE)
+            .setLastHealthCheck(Instant.now())
+            .setStatusMessage("Health check failed: " + e.getMessage())
+            .build();
+        
+        region.updateHealthStatus(unhealthyStatus);
       }
-    }
-    return null;
+    }, healthCheckExecutor);
   }
 
-  /** Creates a regional endpoint manager from configuration. */
-  public static RegionalEndpointManager fromConfiguration(
-      String primaryEndpoint,
-      boolean dataResidencyRequired,
-      Duration healthCheckInterval,
-      Duration healthCheckTimeout) {
-    Region preferredRegion = getRegionFromEndpoint(primaryEndpoint);
-    if (preferredRegion == null) {
-      // Default to EU if endpoint doesn't match known regions
-      logger.warn("Unknown endpoint {}, defaulting to EU region", primaryEndpoint);
-      preferredRegion = Region.EU;
+  private boolean performConnectivityTest(String endpoint) {
+    // In production, this would perform an actual connectivity test
+    // For now, we'll simulate based on endpoint format
+    try {
+      // Simulate network delay
+      Thread.sleep(50 + (long) (Math.random() * 200));
+      
+      // Simulate occasional failures
+      return Math.random() > 0.05; // 95% success rate
+      
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      return false;
+    }
+  }
+
+  @Override
+  public void close() {
+    if (closed) {
+      return;
+    }
+    
+    closed = true;
+    logger.info("Shutting down regional endpoint manager");
+    
+    healthCheckExecutor.shutdown();
+    try {
+      if (!healthCheckExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+        healthCheckExecutor.shutdownNow();
+      }
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      healthCheckExecutor.shutdownNow();
+    }
+    
+    logger.info("Regional endpoint manager shutdown complete");
+  }
+
+  /**
+   * Internal class to track region information and metrics.
+   */
+  private static class RegionInfo {
+    private final String regionId;
+    private final String endpoint;
+    private volatile long latencyMs = Long.MAX_VALUE;
+    private volatile ServiceHealthStatus healthStatus;
+    private volatile Instant lastUpdated = Instant.now();
+
+    public RegionInfo(String regionId, String endpoint) {
+      this.regionId = regionId;
+      this.endpoint = endpoint;
+      this.healthStatus = new ServiceHealthStatus.Builder()
+          .setState(ServiceHealthStatus.HealthState.UNKNOWN)
+          .setEndpoint(endpoint)
+          .setRegion(regionId)
+          .setResponseTimeMs(Long.MAX_VALUE)
+          .setLastHealthCheck(Instant.now())
+          .setStatusMessage("Initial state")
+          .build();
     }
 
-    return new RegionalEndpointManager(
-        preferredRegion,
-        dataResidencyRequired,
-        healthCheckInterval,
-        healthCheckTimeout,
-        DEFAULT_MAX_CONSECUTIVE_FAILURES);
+    public String getRegionId() { return regionId; }
+    public String getEndpoint() { return endpoint; }
+    public long getLatencyMs() { return latencyMs; }
+    public ServiceHealthStatus getHealthStatus() { return healthStatus; }
+    public Instant getLastUpdated() { return lastUpdated; }
+
+    public void updateLatency(long latencyMs) {
+      this.latencyMs = latencyMs;
+      this.lastUpdated = Instant.now();
+    }
+
+    public void updateHealthStatus(ServiceHealthStatus healthStatus) {
+      this.healthStatus = healthStatus;
+      this.lastUpdated = Instant.now();
+    }
   }
 }

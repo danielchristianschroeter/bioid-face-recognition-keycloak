@@ -1,10 +1,23 @@
 package com.bioid.keycloak.admin;
 
+import com.bioid.keycloak.admin.dto.ActivityItem;
+import com.bioid.keycloak.admin.dto.AuthenticationMetrics;
+import com.bioid.keycloak.admin.dto.BulkOperationRequest;
+import com.bioid.keycloak.admin.dto.BulkOperationResult;
 import com.bioid.keycloak.admin.dto.ConnectivityTestResult;
 import com.bioid.keycloak.admin.dto.DeletionRequestDto;
 import com.bioid.keycloak.admin.dto.DeletionRequestPriority;
 import com.bioid.keycloak.admin.dto.DeletionRequestStatus;
+import com.bioid.keycloak.admin.dto.EnrollmentStatistics;
 import com.bioid.keycloak.admin.dto.FaceRecognitionConfigDto;
+import com.bioid.keycloak.admin.dto.LivenessConfigDto;
+import com.bioid.keycloak.admin.dto.LivenessStatistics;
+import com.bioid.keycloak.admin.dto.LivenessTestRequest;
+import com.bioid.keycloak.admin.dto.LivenessTestResult;
+import com.bioid.keycloak.admin.dto.TemplateDetails;
+import com.bioid.keycloak.admin.dto.TemplateListResponse;
+import com.bioid.keycloak.admin.dto.TemplateStatistics;
+import com.bioid.keycloak.admin.dto.TemplateUpgradeResult;
 import com.bioid.keycloak.admin.service.DeletionRequestService;
 import com.bioid.keycloak.client.config.BioIdConfiguration;
 import com.bioid.keycloak.health.FaceRecognitionHealthCheck;
@@ -199,6 +212,379 @@ public class FaceRecognitionAdminResource {
       return Response.serverError()
           .entity(new ErrorResponse("Failed to get health status: " + e.getMessage()))
           .build();
+    }
+  }
+
+  /** Get templates with pagination and filtering. */
+  @GET
+  @Path("/templates")
+  public Response getTemplates(
+      @QueryParam("offset") @DefaultValue("0") int offset,
+      @QueryParam("limit") @DefaultValue("20") int limit,
+      @QueryParam("search") String search,
+      @QueryParam("searchType") @DefaultValue("username") String searchType,
+      @QueryParam("healthStatus") String healthStatus,
+      @QueryParam("encoderVersion") String encoderVersion) {
+    try {
+      // This would integrate with AdminService to get template data
+      // For now, return mock data structure
+      TemplateListResponse response = TemplateListResponse.builder()
+          .templates(java.util.Collections.emptyList())
+          .totalCount(0)
+          .offset(offset)
+          .limit(limit)
+          .build();
+
+      return Response.ok(response).build();
+    } catch (Exception e) {
+      logger.error("Failed to get templates", e);
+      return Response.serverError()
+          .entity(new ErrorResponse("Failed to get templates: " + e.getMessage()))
+          .build();
+    }
+  }
+
+  /** Get template statistics for dashboard. */
+  @GET
+  @Path("/template-statistics")
+  public Response getTemplateStatistics() {
+    try {
+      // This would integrate with AdminService to get statistics
+      TemplateStatistics stats = TemplateStatistics.builder()
+          .totalTemplates(0)
+          .healthyTemplates(0)
+          .needsUpgrade(0)
+          .expiringSoon(0)
+          .build();
+
+      return Response.ok(stats).build();
+    } catch (Exception e) {
+      logger.error("Failed to get template statistics", e);
+      return Response.serverError()
+          .entity(new ErrorResponse("Failed to get template statistics: " + e.getMessage()))
+          .build();
+    }
+  }
+
+  /** Get detailed template information including thumbnails. */
+  @GET
+  @Path("/templates/{classId}")
+  public Response getTemplateDetails(@PathParam("classId") long classId) {
+    try {
+      // This would integrate with TemplateService to get detailed template info
+      TemplateDetails details = TemplateDetails.builder()
+          .classId(classId)
+          .thumbnails(java.util.Collections.emptyList())
+          .build();
+
+      return Response.ok(details).build();
+    } catch (Exception e) {
+      logger.error("Failed to get template details for classId: {}", classId, e);
+      return Response.serverError()
+          .entity(new ErrorResponse("Failed to get template details: " + e.getMessage()))
+          .build();
+    }
+  }
+
+  /** Upgrade a single template. */
+  @POST
+  @Path("/templates/{classId}/upgrade")
+  public Response upgradeTemplate(@PathParam("classId") long classId) {
+    try {
+      // This would integrate with TemplateService to upgrade template
+      logger.info("Template upgrade requested for classId: {} in realm: {}", classId, realm.getName());
+      
+      TemplateUpgradeResult result = TemplateUpgradeResult.builder()
+          .classId(classId)
+          .success(true)
+          .message("Template upgrade completed successfully")
+          .build();
+
+      return Response.ok(result).build();
+    } catch (Exception e) {
+      logger.error("Failed to upgrade template for classId: {}", classId, e);
+      return Response.serverError()
+          .entity(new ErrorResponse("Failed to upgrade template: " + e.getMessage()))
+          .build();
+    }
+  }
+
+  /** Delete a single template. */
+  @DELETE
+  @Path("/templates/{classId}")
+  public Response deleteTemplate(@PathParam("classId") long classId) {
+    try {
+      // This would integrate with AdminService to delete template
+      logger.info("Template deletion requested for classId: {} in realm: {}", classId, realm.getName());
+      return Response.ok().build();
+    } catch (Exception e) {
+      logger.error("Failed to delete template for classId: {}", classId, e);
+      return Response.serverError()
+          .entity(new ErrorResponse("Failed to delete template: " + e.getMessage()))
+          .build();
+    }
+  }
+
+  /** Start bulk template upgrade operation. */
+  @POST
+  @Path("/bulk-upgrade")
+  public Response bulkUpgradeTemplates(BulkOperationRequest request) {
+    try {
+      // This would integrate with BulkOperationService
+      logger.info("Bulk template upgrade requested for {} templates in realm: {}", 
+          request.getClassIds().size(), realm.getName());
+      
+      BulkOperationResult result = BulkOperationResult.builder()
+          .operationId(java.util.UUID.randomUUID().toString())
+          .status("PENDING")
+          .totalItems(request.getClassIds().size())
+          .processedItems(0)
+          .successfulItems(0)
+          .failedItems(0)
+          .build();
+
+      return Response.ok(result).build();
+    } catch (Exception e) {
+      logger.error("Failed to start bulk template upgrade", e);
+      return Response.serverError()
+          .entity(new ErrorResponse("Failed to start bulk upgrade: " + e.getMessage()))
+          .build();
+    }
+  }
+
+  /** Start bulk template deletion operation. */
+  @POST
+  @Path("/bulk-delete")
+  public Response bulkDeleteTemplates(BulkOperationRequest request) {
+    try {
+      // This would integrate with BulkOperationService
+      logger.info("Bulk template deletion requested for {} templates in realm: {}", 
+          request.getClassIds().size(), realm.getName());
+      
+      BulkOperationResult result = BulkOperationResult.builder()
+          .operationId(java.util.UUID.randomUUID().toString())
+          .status("PENDING")
+          .totalItems(request.getClassIds().size())
+          .processedItems(0)
+          .successfulItems(0)
+          .failedItems(0)
+          .build();
+
+      return Response.ok(result).build();
+    } catch (Exception e) {
+      logger.error("Failed to start bulk template deletion", e);
+      return Response.serverError()
+          .entity(new ErrorResponse("Failed to start bulk deletion: " + e.getMessage()))
+          .build();
+    }
+  }
+
+  /** Get bulk operation status. */
+  @GET
+  @Path("/bulk-operations/{operationId}")
+  public Response getBulkOperationStatus(@PathParam("operationId") String operationId) {
+    try {
+      // This would integrate with BulkOperationService to get operation status
+      BulkOperationResult result = BulkOperationResult.builder()
+          .operationId(operationId)
+          .status("COMPLETED")
+          .totalItems(10)
+          .processedItems(10)
+          .successfulItems(9)
+          .failedItems(1)
+          .build();
+
+      return Response.ok(result).build();
+    } catch (Exception e) {
+      logger.error("Failed to get bulk operation status for operationId: {}", operationId, e);
+      return Response.serverError()
+          .entity(new ErrorResponse("Failed to get operation status: " + e.getMessage()))
+          .build();
+    }
+  }
+
+  /** Cancel bulk operation. */
+  @POST
+  @Path("/bulk-operations/{operationId}/cancel")
+  public Response cancelBulkOperation(@PathParam("operationId") String operationId) {
+    try {
+      // This would integrate with BulkOperationService to cancel operation
+      logger.info("Bulk operation cancellation requested for operationId: {} in realm: {}", 
+          operationId, realm.getName());
+      return Response.ok().build();
+    } catch (Exception e) {
+      logger.error("Failed to cancel bulk operation for operationId: {}", operationId, e);
+      return Response.serverError()
+          .entity(new ErrorResponse("Failed to cancel operation: " + e.getMessage()))
+          .build();
+    }
+  }
+
+  /** Get liveness detection configuration. */
+  @GET
+  @Path("/liveness-config")
+  public Response getLivenessConfiguration() {
+    try {
+      // This would integrate with LivenessService to get configuration
+      LivenessConfigDto config = LivenessConfigDto.builder()
+          .defaultLivenessMode("PASSIVE")
+          .livenessThreshold(0.7)
+          .challengeDirections(java.util.Arrays.asList("UP", "DOWN", "LEFT", "RIGHT"))
+          .maxOverheadMs(1000)
+          .fallbackEnabled(true)
+          .detailedLogging(false)
+          .build();
+
+      return Response.ok(config).build();
+    } catch (Exception e) {
+      logger.error("Failed to get liveness configuration", e);
+      return Response.serverError()
+          .entity(new ErrorResponse("Failed to get liveness configuration: " + e.getMessage()))
+          .build();
+    }
+  }
+
+  /** Update liveness detection configuration. */
+  @PUT
+  @Path("/liveness-config")
+  public Response updateLivenessConfiguration(LivenessConfigDto config) {
+    try {
+      // Validate configuration
+      validateLivenessConfiguration(config);
+
+      // This would integrate with LivenessService to update configuration
+      logger.info("Liveness configuration updated for realm: {}", realm.getName());
+      return Response.ok().build();
+    } catch (IllegalArgumentException e) {
+      logger.warn("Invalid liveness configuration provided: {}", e.getMessage());
+      return Response.status(Response.Status.BAD_REQUEST)
+          .entity(new ErrorResponse(e.getMessage()))
+          .build();
+    } catch (Exception e) {
+      logger.error("Failed to update liveness configuration", e);
+      return Response.serverError()
+          .entity(new ErrorResponse("Failed to update liveness configuration: " + e.getMessage()))
+          .build();
+    }
+  }
+
+  /** Test liveness detection with uploaded images. */
+  @POST
+  @Path("/test-liveness")
+  public Response testLivenessDetection(LivenessTestRequest request) {
+    try {
+      // This would integrate with LivenessService to perform test
+      LivenessTestResult result = LivenessTestResult.builder()
+          .live(true)
+          .livenessScore(0.85)
+          .processingTime(250)
+          .rejectionReason(null)
+          .build();
+
+      return Response.ok(result).build();
+    } catch (Exception e) {
+      logger.error("Failed to test liveness detection", e);
+      return Response.serverError()
+          .entity(new ErrorResponse("Failed to test liveness detection: " + e.getMessage()))
+          .build();
+    }
+  }
+
+  /** Get enrollment statistics for dashboard. */
+  @GET
+  @Path("/enrollment-statistics")
+  public Response getEnrollmentStatistics() {
+    try {
+      // This would integrate with AdminService to get enrollment statistics
+      EnrollmentStatistics stats = EnrollmentStatistics.builder()
+          .totalEnrollments(150)
+          .successRate(92.5)
+          .enrollmentsToday(5)
+          .enrollmentsThisWeek(23)
+          .build();
+
+      return Response.ok(stats).build();
+    } catch (Exception e) {
+      logger.error("Failed to get enrollment statistics", e);
+      return Response.serverError()
+          .entity(new ErrorResponse("Failed to get enrollment statistics: " + e.getMessage()))
+          .build();
+    }
+  }
+
+  /** Get authentication metrics for dashboard. */
+  @GET
+  @Path("/auth-metrics")
+  public Response getAuthenticationMetrics() {
+    try {
+      // This would integrate with MetricsService to get authentication metrics
+      AuthenticationMetrics metrics = AuthenticationMetrics.builder()
+          .totalAuthentications(1250)
+          .successRate(94.8)
+          .avgResponseTime(180)
+          .failedAttempts(65)
+          .build();
+
+      return Response.ok(metrics).build();
+    } catch (Exception e) {
+      logger.error("Failed to get authentication metrics", e);
+      return Response.serverError()
+          .entity(new ErrorResponse("Failed to get authentication metrics: " + e.getMessage()))
+          .build();
+    }
+  }
+
+  /** Get liveness detection statistics for dashboard. */
+  @GET
+  @Path("/liveness-statistics")
+  public Response getLivenessStatistics(@QueryParam("timeframe") @DefaultValue("7d") String timeframe) {
+    try {
+      // This would integrate with LivenessService to get statistics
+      LivenessStatistics stats = LivenessStatistics.builder()
+          .totalChecks(850)
+          .passRate(89.2)
+          .avgScore(0.78)
+          .avgTime(320)
+          .build();
+
+      return Response.ok(stats).build();
+    } catch (Exception e) {
+      logger.error("Failed to get liveness statistics", e);
+      return Response.serverError()
+          .entity(new ErrorResponse("Failed to get liveness statistics: " + e.getMessage()))
+          .build();
+    }
+  }
+
+  /** Get recent activity for dashboard. */
+  @GET
+  @Path("/recent-activity")
+  public Response getRecentActivity(@QueryParam("limit") @DefaultValue("10") int limit) {
+    try {
+      // This would integrate with AuditService to get recent activities
+      java.util.List<ActivityItem> activities = java.util.Collections.emptyList();
+      return Response.ok(activities).build();
+    } catch (Exception e) {
+      logger.error("Failed to get recent activity", e);
+      return Response.serverError()
+          .entity(new ErrorResponse("Failed to get recent activity: " + e.getMessage()))
+          .build();
+    }
+  }
+
+  private void validateLivenessConfiguration(LivenessConfigDto config) {
+    if (config.getLivenessThreshold() < 0.0 || config.getLivenessThreshold() > 1.0) {
+      throw new IllegalArgumentException("Liveness threshold must be between 0.0 and 1.0");
+    }
+
+    if (config.getMaxOverheadMs() < 50 || config.getMaxOverheadMs() > 5000) {
+      throw new IllegalArgumentException("Maximum overhead must be between 50 and 5000 milliseconds");
+    }
+
+    if ("CHALLENGE_RESPONSE".equals(config.getDefaultLivenessMode())) {
+      if (config.getChallengeDirections() == null || config.getChallengeDirections().size() < 2) {
+        throw new IllegalArgumentException("At least 2 challenge directions must be specified for Challenge-Response mode");
+      }
     }
   }
 

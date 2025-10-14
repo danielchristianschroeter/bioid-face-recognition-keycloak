@@ -1,0 +1,386 @@
+/* Common Admin Console Styles */
+
+/* Global Variables */
+:root {
+    --admin-primary-color: #0066cc;
+    --admin-success-color: #28a745;
+    --admin-warning-color: #ffc107;
+    --admin-danger-color: #dc3545;
+    --admin-info-color: #17a2b8;
+    --admin-light-color: #f8f9fa;
+    --admin-dark-color: #343a40;
+    --admin-border-radius: 4px;
+    --admin-box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --admin-transition: all 0.2s ease-in-out;
+}
+
+/* Base Layout */
+.admin-page {
+    min-height: 100vh;
+    background-color: var(--pf-global--BackgroundColor--100);
+}
+
+.admin-content {
+    padding: var(--pf-global--spacer--lg);
+}
+
+/* Common Card Styles */
+.admin-card {
+    background: var(--pf-global--BackgroundColor--100);
+    border: 1px solid var(--pf-global--BorderColor--100);
+    border-radius: var(--admin-border-radius);
+    box-shadow: var(--admin-box-shadow);
+    margin-bottom: var(--pf-global--spacer--lg);
+}
+
+.admin-card-header {
+    padding: var(--pf-global--spacer--md) var(--pf-global--spacer--lg);
+    border-bottom: 1px solid var(--pf-global--BorderColor--100);
+    background-color: var(--pf-global--BackgroundColor--200);
+}
+
+.admin-card-body {
+    padding: var(--pf-global--spacer--lg);
+}
+
+.admin-card-footer {
+    padding: var(--pf-global--spacer--md) var(--pf-global--spacer--lg);
+    border-top: 1px solid var(--pf-global--BorderColor--100);
+    background-color: var(--pf-global--BackgroundColor--200);
+}
+
+/* Common Button Styles */
+.admin-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--pf-global--spacer--sm);
+    padding: var(--pf-global--spacer--sm) var(--pf-global--spacer--md);
+    border: 1px solid transparent;
+    border-radius: var(--admin-border-radius);
+    font-size: var(--pf-global--FontSize--sm);
+    font-weight: var(--pf-global--FontWeight--semi-bold);
+    text-decoration: none;
+    cursor: pointer;
+    transition: var(--admin-transition);
+}
+
+.admin-btn:hover {
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+
+.admin-btn:focus {
+    outline: 2px solid var(--admin-primary-color);
+    outline-offset: 2px;
+}
+
+.admin-btn-primary {
+    background-color: var(--admin-primary-color);
+    color: white;
+    border-color: var(--admin-primary-color);
+}
+
+.admin-btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+}
+
+.admin-btn-secondary {
+    background-color: var(--pf-global--BackgroundColor--200);
+    color: var(--pf-global--Color--100);
+    border-color: var(--pf-global--BorderColor--100);
+}
+
+.admin-btn-secondary:hover {
+    background-color: var(--pf-global--BackgroundColor--300);
+}
+
+.admin-btn-success {
+    background-color: var(--admin-success-color);
+    color: white;
+    border-color: var(--admin-success-color);
+}
+
+.admin-btn-warning {
+    background-color: var(--admin-warning-color);
+    color: var(--admin-dark-color);
+    border-color: var(--admin-warning-color);
+}
+
+.admin-btn-danger {
+    background-color: var(--admin-danger-color);
+    color: white;
+    border-color: var(--admin-danger-color);
+}
+
+/* Common Form Styles */
+.admin-form-group {
+    margin-bottom: var(--pf-global--spacer--lg);
+}
+
+.admin-form-label {
+    display: block;
+    margin-bottom: var(--pf-global--spacer--sm);
+    font-weight: var(--pf-global--FontWeight--semi-bold);
+    color: var(--pf-global--Color--100);
+}
+
+.admin-form-control {
+    width: 100%;
+    padding: var(--pf-global--spacer--sm) var(--pf-global--spacer--md);
+    border: 1px solid var(--pf-global--BorderColor--100);
+    border-radius: var(--admin-border-radius);
+    font-size: var(--pf-global--FontSize--md);
+    transition: var(--admin-transition);
+}
+
+.admin-form-control:focus {
+    outline: none;
+    border-color: var(--admin-primary-color);
+    box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+}
+
+.admin-form-help {
+    margin-top: var(--pf-global--spacer--xs);
+    font-size: var(--pf-global--FontSize--sm);
+    color: var(--pf-global--Color--200);
+}
+
+/* Common Table Styles */
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: var(--pf-global--spacer--lg);
+}
+
+.admin-table th,
+.admin-table td {
+    padding: var(--pf-global--spacer--md);
+    text-align: left;
+    border-bottom: 1px solid var(--pf-global--BorderColor--100);
+}
+
+.admin-table th {
+    background-color: var(--pf-global--BackgroundColor--200);
+    font-weight: var(--pf-global--FontWeight--semi-bold);
+    color: var(--pf-global--Color--100);
+}
+
+.admin-table tbody tr:hover {
+    background-color: var(--pf-global--BackgroundColor--200);
+}
+
+/* Common Alert Styles */
+.admin-alert {
+    padding: var(--pf-global--spacer--md);
+    border: 1px solid transparent;
+    border-radius: var(--admin-border-radius);
+    margin-bottom: var(--pf-global--spacer--lg);
+}
+
+.admin-alert-success {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.admin-alert-warning {
+    background-color: #fff3cd;
+    border-color: #ffeaa7;
+    color: #856404;
+}
+
+.admin-alert-danger {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+
+.admin-alert-info {
+    background-color: #d1ecf1;
+    border-color: #bee5eb;
+    color: #0c5460;
+}
+
+/* Common Badge Styles */
+.admin-badge {
+    display: inline-block;
+    padding: var(--pf-global--spacer--xs) var(--pf-global--spacer--sm);
+    font-size: var(--pf-global--FontSize--xs);
+    font-weight: var(--pf-global--FontWeight--bold);
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: var(--admin-border-radius);
+}
+
+.admin-badge-primary {
+    background-color: var(--admin-primary-color);
+    color: white;
+}
+
+.admin-badge-success {
+    background-color: var(--admin-success-color);
+    color: white;
+}
+
+.admin-badge-warning {
+    background-color: var(--admin-warning-color);
+    color: var(--admin-dark-color);
+}
+
+.admin-badge-danger {
+    background-color: var(--admin-danger-color);
+    color: white;
+}
+
+.admin-badge-secondary {
+    background-color: var(--pf-global--Color--200);
+    color: white;
+}
+
+/* Common Loading Styles */
+.admin-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--pf-global--spacer--xl);
+}
+
+.admin-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--pf-global--BorderColor--100);
+    border-top: 3px solid var(--admin-primary-color);
+    border-radius: 50%;
+    animation: admin-spin 1s linear infinite;
+}
+
+@keyframes admin-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Common Utility Classes */
+.admin-text-center { text-align: center; }
+.admin-text-left { text-align: left; }
+.admin-text-right { text-align: right; }
+
+.admin-text-primary { color: var(--admin-primary-color); }
+.admin-text-success { color: var(--admin-success-color); }
+.admin-text-warning { color: var(--admin-warning-color); }
+.admin-text-danger { color: var(--admin-danger-color); }
+.admin-text-info { color: var(--admin-info-color); }
+.admin-text-muted { color: var(--pf-global--Color--200); }
+
+.admin-bg-primary { background-color: var(--admin-primary-color); }
+.admin-bg-success { background-color: var(--admin-success-color); }
+.admin-bg-warning { background-color: var(--admin-warning-color); }
+.admin-bg-danger { background-color: var(--admin-danger-color); }
+.admin-bg-info { background-color: var(--admin-info-color); }
+.admin-bg-light { background-color: var(--admin-light-color); }
+.admin-bg-dark { background-color: var(--admin-dark-color); }
+
+.admin-mb-0 { margin-bottom: 0; }
+.admin-mb-1 { margin-bottom: var(--pf-global--spacer--xs); }
+.admin-mb-2 { margin-bottom: var(--pf-global--spacer--sm); }
+.admin-mb-3 { margin-bottom: var(--pf-global--spacer--md); }
+.admin-mb-4 { margin-bottom: var(--pf-global--spacer--lg); }
+.admin-mb-5 { margin-bottom: var(--pf-global--spacer--xl); }
+
+.admin-mt-0 { margin-top: 0; }
+.admin-mt-1 { margin-top: var(--pf-global--spacer--xs); }
+.admin-mt-2 { margin-top: var(--pf-global--spacer--sm); }
+.admin-mt-3 { margin-top: var(--pf-global--spacer--md); }
+.admin-mt-4 { margin-top: var(--pf-global--spacer--lg); }
+.admin-mt-5 { margin-top: var(--pf-global--spacer--xl); }
+
+.admin-p-0 { padding: 0; }
+.admin-p-1 { padding: var(--pf-global--spacer--xs); }
+.admin-p-2 { padding: var(--pf-global--spacer--sm); }
+.admin-p-3 { padding: var(--pf-global--spacer--md); }
+.admin-p-4 { padding: var(--pf-global--spacer--lg); }
+.admin-p-5 { padding: var(--pf-global--spacer--xl); }
+
+.admin-d-none { display: none; }
+.admin-d-block { display: block; }
+.admin-d-inline { display: inline; }
+.admin-d-inline-block { display: inline-block; }
+.admin-d-flex { display: flex; }
+
+.admin-flex-column { flex-direction: column; }
+.admin-flex-row { flex-direction: row; }
+.admin-justify-content-start { justify-content: flex-start; }
+.admin-justify-content-center { justify-content: center; }
+.admin-justify-content-end { justify-content: flex-end; }
+.admin-justify-content-between { justify-content: space-between; }
+.admin-align-items-start { align-items: flex-start; }
+.admin-align-items-center { align-items: center; }
+.admin-align-items-end { align-items: flex-end; }
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .admin-content {
+        padding: var(--pf-global--spacer--md);
+    }
+    
+    .admin-card-body {
+        padding: var(--pf-global--spacer--md);
+    }
+    
+    .admin-table {
+        font-size: var(--pf-global--FontSize--sm);
+    }
+    
+    .admin-table th,
+    .admin-table td {
+        padding: var(--pf-global--spacer--sm);
+    }
+}
+
+/* Print Styles */
+@media print {
+    .admin-btn,
+    .admin-card-footer {
+        display: none;
+    }
+    
+    .admin-card {
+        break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #000;
+    }
+    
+    .admin-table {
+        border-collapse: collapse;
+    }
+    
+    .admin-table th,
+    .admin-table td {
+        border: 1px solid #000;
+    }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    .admin-card,
+    .admin-form-control,
+    .admin-table th,
+    .admin-table td {
+        border-width: 2px;
+    }
+    
+    .admin-btn {
+        border-width: 2px;
+    }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    .admin-btn,
+    .admin-form-control,
+    .admin-spinner {
+        transition: none;
+        animation: none;
+    }
+}

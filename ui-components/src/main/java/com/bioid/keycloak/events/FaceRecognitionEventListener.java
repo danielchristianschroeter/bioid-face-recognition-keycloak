@@ -10,12 +10,15 @@ import org.keycloak.events.admin.OperationType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import jakarta.enterprise.context.ApplicationScoped;
+
 /**
  * Event listener for Face Recognition operations.
  *
  * <p>Provides comprehensive audit logging for all biometric operations including enrollment,
  * verification, deletion, and administrative actions.
  */
+@ApplicationScoped
 public class FaceRecognitionEventListener implements EventListenerProvider {
 
   private static final Logger logger = LoggerFactory.getLogger(FaceRecognitionEventListener.class);

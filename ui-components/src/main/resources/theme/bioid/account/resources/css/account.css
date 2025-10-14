@@ -34,6 +34,7 @@
     border-radius: 12px;
     font-size: 0.875rem;
     font-weight: 500;
+    margin-bottom: 1rem;
 }
 
 .face-credential-status.active {
@@ -57,6 +58,573 @@
 
 .face-credential-actions .btn {
     margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Credential details */
+.credential-details {
+    background-color: #fff;
+    padding: 1rem;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+    margin: 1rem 0;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-row strong {
+    color: #333;
+    font-weight: 600;
+}
+
+/* Template status */
+.template-status-section {
+    background-color: #fff;
+    padding: 1rem;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+    margin: 1rem 0;
+}
+
+.template-status-section h4 {
+    margin: 0 0 1rem 0;
+    color: #333;
+    font-size: 1rem;
+}
+
+.upgrade-notification {
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 0.5rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+    border: 1px solid #ffeaa7;
+}
+
+.health-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.health-badge.health-good {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.health-badge.health-warning {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.health-badge.health-poor {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.health-badge.health-unknown {
+    background-color: #e2e3e5;
+    color: #6c757d;
+}
+
+/* Settings section */
+.face-credential-settings {
+    background-color: #fff;
+    padding: 1.5rem;
+    border-radius: 6px;
+    border: 1px solid #e0e0e0;
+    margin: 1rem 0;
+}
+
+.face-credential-settings h4 {
+    margin: 0 0 1rem 0;
+    color: #333;
+    font-size: 1rem;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-weight: 500;
+    color: #333;
+}
+
+.checkbox-label input[type="checkbox"] {
+    margin-right: 0.5rem;
+    transform: scale(1.2);
+}
+
+.checkbox-label input[type="checkbox"]:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.help-text {
+    margin: 0.25rem 0 0 1.7rem;
+    font-size: 0.875rem;
+    color: #666;
+}
+
+/* Modal styles */
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    background-color: #fff;
+    margin: 10% auto;
+    padding: 0;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.modal-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #333;
+}
+
+.close {
+    color: #aaa;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover,
+.close:focus {
+    color: #000;
+}
+
+.modal-body {
+    padding: 1.5rem;
+    color: #666;
+}
+
+.modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+/* Button styles */
+.btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-block;
+    transition: background-color 0.2s;
+}
+
+.btn-primary {
+    background-color: #0066cc;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #0052a3;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #545b62;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+}
+
+/* Loading state */
+.loading {
+    text-align: center;
+    padding: 2rem;
+    color: #666;
+}
+
+/* Enhanced Template Status Display */
+.template-status-display {
+    background-color: #fff;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    margin: 1rem 0;
+    overflow: hidden;
+}
+
+.template-status-overview {
+    padding: 1.5rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.status-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.status-header .status-icon {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.status-header .status-text h4 {
+    margin: 0 0 0.5rem 0;
+    color: #333;
+    font-size: 1.1rem;
+}
+
+.status-header .status-description {
+    margin: 0;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.upgrade-banner {
+    background-color: #fff3cd;
+    color: #856404;
+    padding: 0.75rem 1rem;
+    margin-top: 1rem;
+    border-radius: 4px;
+    border: 1px solid #ffeaa7;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.template-details {
+    padding: 1.5rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.template-details h5 {
+    margin: 0 0 1rem 0;
+    color: #333;
+    font-size: 1rem;
+}
+
+.detail-grid {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.detail-item {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+}
+
+.detail-label {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.detail-value {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.detail-explanation {
+    font-size: 0.85rem;
+    color: #666;
+    line-height: 1.4;
+}
+
+.version-badge, .quality-indicator {
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.version-badge.current {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.version-badge.outdated {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.quality-indicator.quality-excellent {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.quality-indicator.quality-good {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+.quality-indicator.quality-fair {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.quality-indicator.quality-poor {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.usage-statistics {
+    padding: 1.5rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.usage-statistics h5 {
+    margin: 0 0 1rem 0;
+    color: #333;
+    font-size: 1rem;
+}
+
+.usage-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.usage-item {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+}
+
+.usage-label {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.usage-value {
+    font-size: 1rem;
+    color: #495057;
+}
+
+.usage-explanation {
+    background-color: #e7f3ff;
+    padding: 1rem;
+    border-radius: 6px;
+    border: 1px solid #b8daff;
+}
+
+.usage-explanation p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #004085;
+}
+
+.health-explanation {
+    padding: 1.5rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.health-explanation h5 {
+    margin: 0 0 1rem 0;
+    color: #333;
+    font-size: 1rem;
+}
+
+.explanation-content p {
+    margin: 0 0 1rem 0;
+    color: #666;
+    line-height: 1.5;
+}
+
+.recommendations {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 6px;
+    border-left: 4px solid #0066cc;
+}
+
+.recommendations strong {
+    color: #333;
+}
+
+.recommendations ul {
+    margin: 0.5rem 0 0 0;
+    padding-left: 1.5rem;
+}
+
+.recommendations li {
+    margin-bottom: 0.5rem;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.upgrade-notification-detailed {
+    padding: 1.5rem;
+    background-color: #fff3cd;
+    border-top: 1px solid #ffeaa7;
+}
+
+.upgrade-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.upgrade-header .upgrade-icon {
+    font-size: 1.5rem;
+}
+
+.upgrade-header h5 {
+    margin: 0;
+    color: #856404;
+    font-size: 1rem;
+}
+
+.upgrade-content {
+    color: #856404;
+    margin-bottom: 1rem;
+}
+
+.upgrade-content p {
+    margin: 0 0 0.5rem 0;
+}
+
+.upgrade-content ul {
+    margin: 0.5rem 0;
+    padding-left: 1.5rem;
+}
+
+.upgrade-content li {
+    margin-bottom: 0.25rem;
+}
+
+.upgrade-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.btn-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8rem;
+}
+
+.btn-link {
+    background: none;
+    border: none;
+    color: #0066cc;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.btn-link:hover {
+    color: #0052a3;
+}
+
+.template-status-unavailable {
+    padding: 1.5rem;
+    text-align: center;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+}
+
+.template-status-unavailable .status-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.template-status-unavailable h4 {
+    margin: 0 0 1rem 0;
+    color: #333;
+}
+
+.template-status-unavailable p {
+    color: #666;
+    margin-bottom: 1rem;
+}
+
+.template-status-unavailable ul {
+    text-align: left;
+    display: inline-block;
+    color: #666;
+}
+
+/* Responsive design for template status */
+@media (max-width: 768px) {
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .usage-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .status-header {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .upgrade-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .upgrade-actions .btn {
+        width: 100%;
+        text-align: center;
+    }
 }
 
 /* Responsive design */

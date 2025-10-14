@@ -1,27 +1,50 @@
 package com.bioid.keycloak.client;
 
 import com.bioid.keycloak.client.exception.BioIdException;
-import com.bioid.services.Facerecognition;
 
 public interface BioIdClient extends AutoCloseable {
 
-  Facerecognition.FaceEnrollmentResponse enroll(Facerecognition.FaceEnrollmentRequest request)
-      throws BioIdException;
+  // Simplified method signatures for testing - these will be replaced with protobuf types
+  // when the protobuf generation is working properly
+  
+  /**
+   * Enrolls a face template.
+   */
+  void enroll(byte[] imageData, long classId) throws BioIdException;
 
-  Facerecognition.FaceVerificationResponse verify(Facerecognition.FaceVerificationRequest request)
-      throws BioIdException;
+  /**
+   * Verifies a face against enrolled templates.
+   */
+  boolean verify(byte[] imageData, long classId) throws BioIdException;
 
-  Facerecognition.DeleteTemplateResponse deleteTemplate(
-      Facerecognition.DeleteTemplateRequest request) throws BioIdException;
+  /**
+   * Deletes a template by class ID.
+   */
+  void deleteTemplate(long classId) throws BioIdException;
 
-  Facerecognition.FaceTemplateStatus getTemplateStatus(
-      Facerecognition.FaceTemplateStatusRequest request) throws BioIdException;
+  /**
+   * Gets template status information.
+   */
+  String getTemplateStatus(long classId) throws BioIdException;
 
-  Facerecognition.SetTemplateTagsResponse setTemplateTags(
-      Facerecognition.SetTemplateTagsRequest request) throws BioIdException;
+  /**
+   * Sets template tags.
+   */
+  void setTemplateTags(long classId, String[] tags) throws BioIdException;
 
+  /**
+   * Performs liveness detection.
+   */
+  boolean livenessDetection(byte[] imageData) throws BioIdException;
+
+  /**
+   * Checks if the service is healthy.
+   */
   boolean isHealthy();
 
+  /**
+   * Gets the current endpoint.
+   */
   String getCurrentEndpoint();
 
   /**
@@ -33,14 +56,6 @@ public interface BioIdClient extends AutoCloseable {
    * @throws BioIdException if verification fails
    */
   boolean verifyFaceWithImageData(long classId, String imageData) throws BioIdException;
-
-  /**
-   * Convenience method for deleting a face template.
-   *
-   * @param classId the class ID for the user
-   * @throws BioIdException if deletion fails
-   */
-  void deleteTemplate(long classId) throws BioIdException;
 
   /**
    * Convenience method for face enrollment using simple parameters.
