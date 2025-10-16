@@ -171,6 +171,10 @@ bws-client-id.txt
 bws-key.txt
 bioid-credentials.json
 
+# Debug images - contains biometric data, never commit!
+debug-images/
+**/debug-images/
+
 # Testing
 **/test-output/
 **/allure-results/

@@ -74,8 +74,8 @@ public class FaceRecognitionAdminResource {
               .clientId(configuration.getClientId())
               .verificationThreshold(configuration.getVerificationThreshold())
               .maxRetries(configuration.getMaxRetries())
-              .livenessEnabled(configuration.isLivenessEnabled())
-              .passiveLivenessEnabled(configuration.isLivenessPassiveEnabled())
+              .livenessEnabled(true) // BWS always performs liveness detection
+              .passiveLivenessEnabled(true) // Passive liveness is always enabled by BWS
               .activeLivenessEnabled(configuration.isLivenessActiveEnabled())
               .challengeResponseLivenessEnabled(configuration.isLivenessChallengeResponseEnabled())
               .livenessConfidenceThreshold(configuration.getLivenessConfidenceThreshold())

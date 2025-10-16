@@ -387,49 +387,109 @@ public class FaceCredentialRealmResourceProvider implements RealmResourceProvide
             );
         }
 
+        /**
+         * Get thumbnails for a credential
+         */
+        @GET
+        @Path("/thumbnails/{credentialId}")
+        @Produces(MediaType.APPLICATION_JSON)
+        public Response getThumbnails(@PathParam("credentialId") String credentialId) {
+            AuthenticationManager.AuthResult auth = new AppAuthManager.BearerTokenAuthenticator(session).authenticate();
+            if (auth == null) {
+                return Response.status(Response.Status.UNAUTHORIZED).build();
+            }
+
+            try {
+                UserModel user = auth.getUser();
+                RealmModel realm = session.getContext().getRealm();
+                FaceCredentialProvider provider = getCredentialProvider();
+
+                // Find the credential
+                FaceCredentialModel credential = provider.getFaceCredentials(realm, user)
+                    .filter(c -> c.getId().equals(credentialId))
+                    .findFirst()
+                    .orElse(null);
+
+                if (credential == null) {
+                    return Response.status(Response.Status.NOT_FOUND).build();
+                }
+
+                // Get template status with thumbnails
+                com.bioid.keycloak.client.BioIdClient bioIdClient = provider.getBioIdClient();
+                if (bioIdClient == null) {
+                    return Response.status(Response.Status.SERVICE_UNAVAILABLE)
+                        .entity("{\"error\":\"BioID service not available\"}").build();
+                }
+
+                com.bioid.keycloak.client.BioIdClient.TemplateStatusDetails details = 
+                    bioIdClient.getTemplateStatusDetails(credential.getClassId(), true);
+
+                if (!details.isAvailable() || details.getThumbnails().isEmpty()) {
+                    return Response.ok("{\"thumbnails\":[]}").build();
+                }
+
+                // Convert thumbnails to base64 for JSON response
+                List<Map<String, String>> thumbnailList = new ArrayList<>();
+                for (com.bioid.keycloak.client.BioIdClient.ThumbnailData thumb : details.getThumbnails()) {
+                    Map<String, String> thumbData = new HashMap<>();
+                    thumbData.put("enrolled", thumb.getEnrolled() != null ? thumb.getEnrolled().toString() : "");
+                    thumbData.put("image", "data:image/png;base64," + 
+                        java.util.Base64.getEncoder().encodeToString(thumb.getImageData()));
+                    thumbnailList.add(thumbData);
+                }
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("thumbnails", thumbnailList);
+                response.put("count", thumbnailList.size());
+
+                logger.info("Retrieved {} thumbnails for credential: {} (user: {})", 
+                    thumbnailList.size(), credentialId, user.getId());
+
+                return Response.ok(mapToJson(response)).build();
+
+            } catch (Exception e) {
+                logger.error("Error getting thumbnails for credential: " + credentialId, e);
+                return Response.serverError().build();
+            }
+        }
+
         private TemplateStatusInfo getTemplateStatusInfo(FaceCredentialModel credential) {
             try {
-                // For now, return mock template status info
-                // In a real implementation, this would call the BioID service
-                // through the appropriate client interface
+                FaceCredentialProvider provider = getCredentialProvider();
+                com.bioid.keycloak.client.BioIdClient bioIdClient = provider.getBioIdClient();
                 
-                // Extract basic info from credential
-                // Note: getCredentialData() returns String, not Map
-                String credentialDataStr = credential.getCredentialData();
-                if (credentialDataStr == null) {
+                if (bioIdClient == null) {
+                    logger.warn("BioID client not available, returning null template status");
                     return null;
                 }
 
-                // Mock template status based on credential age and data
-                int encoderVersion = 4; // Default to older version
-                int featureVectors = 15; // Default to good quality
+                // Get template status from BWS (without thumbnails for performance)
+                com.bioid.keycloak.client.BioIdClient.TemplateStatusDetails details = 
+                    bioIdClient.getTemplateStatusDetails(credential.getClassId(), false);
+
+                if (!details.isAvailable()) {
+                    return null;
+                }
+
+                // Determine health status based on encoder version
                 String healthStatus = "HEALTHY";
                 boolean needsUpgrade = false;
-
-                // Determine status based on credential age
-                long daysSinceCreation = java.time.Duration.between(
-                    credential.getCreatedAt(), 
-                    Instant.now()
-                ).toDays();
-
-                if (daysSinceCreation > 365) {
-                    encoderVersion = 3;
+                
+                // Encoder version 5 is current, 4 is acceptable, 3 or lower needs upgrade
+                if (details.getEncoderVersion() < 4) {
                     healthStatus = "NEEDS_UPGRADE";
                     needsUpgrade = true;
-                } else if (daysSinceCreation > 180) {
-                    encoderVersion = 4;
-                    healthStatus = "NEEDS_UPGRADE";
-                    needsUpgrade = true;
-                } else {
-                    encoderVersion = 5;
-                    healthStatus = "HEALTHY";
+                } else if (details.getEncoderVersion() == 4) {
+                    healthStatus = "ACCEPTABLE";
+                    needsUpgrade = false;
                 }
 
                 return new TemplateStatusInfo(
-                    encoderVersion,
-                    featureVectors,
+                    details.getEncoderVersion(),
+                    details.getFeatureVectors(),
                     healthStatus,
-                    needsUpgrade
+                    needsUpgrade,
+                    details.getThumbnailsStored()
                 );
 
             } catch (Exception e) {
@@ -537,13 +597,15 @@ public class FaceCredentialRealmResourceProvider implements RealmResourceProvide
         public int featureVectors;
         public String healthStatus;
         public boolean needsUpgrade;
+        public int thumbnailsStored;
 
         public TemplateStatusInfo(int encoderVersion, int featureVectors, 
-                                String healthStatus, boolean needsUpgrade) {
+                                String healthStatus, boolean needsUpgrade, int thumbnailsStored) {
             this.encoderVersion = encoderVersion;
             this.featureVectors = featureVectors;
             this.healthStatus = healthStatus;
             this.needsUpgrade = needsUpgrade;
+            this.thumbnailsStored = thumbnailsStored;
         }
     }
 }

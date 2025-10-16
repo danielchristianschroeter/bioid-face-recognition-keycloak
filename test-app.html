@@ -5,67 +5,210 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BioID Face Authentication Test</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 50px auto;
-            padding: 20px;
-            background-color: #f5f5f5;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         .container {
             background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+            padding: 40px;
+            animation: slideIn 0.3s ease;
         }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2rem;
+        }
+
+        h2 {
+            color: #555;
+            margin: 20px 0 15px 0;
+            font-size: 1.5rem;
+        }
+
+        h3 {
+            color: #666;
+            margin: 15px 0 10px 0;
+            font-size: 1.2rem;
+        }
+
+        p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
         .button {
-            background-color: #007bff;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 12px 24px;
             border: none;
-            border-radius: 4px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 16px;
+            font-weight: 600;
             margin: 10px 5px;
             text-decoration: none;
             display: inline-block;
+            transition: all 0.3s ease;
         }
+
         .button:hover {
-            background-color: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
+
         .logout-button {
-            background-color: #dc3545;
+            background: #dc3545;
         }
+
         .logout-button:hover {
-            background-color: #c82333;
+            background: #c82333;
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
         }
+
         .user-info {
             background-color: #d4edda;
-            border: 1px solid #c3e6cb;
-            padding: 15px;
-            border-radius: 4px;
+            border-left: 4px solid #28a745;
+            padding: 20px;
+            border-radius: 8px;
             margin: 20px 0;
         }
+
+        .user-info p {
+            margin: 8px 0;
+            color: #155724;
+        }
+
         .error {
             background-color: #f8d7da;
-            border: 1px solid #f5c6cb;
+            border-left: 4px solid #dc3545;
             color: #721c24;
-            padding: 15px;
-            border-radius: 4px;
+            padding: 20px;
+            border-radius: 8px;
             margin: 20px 0;
+            white-space: pre-wrap;
+            line-height: 1.6;
         }
+
+        .error h3 {
+            color: #721c24;
+            margin-bottom: 10px;
+        }
+
         pre {
             background-color: #f8f9fa;
             padding: 15px;
-            border-radius: 4px;
+            border-radius: 8px;
             overflow-x: auto;
+            font-size: 0.9rem;
+            border: 1px solid #dee2e6;
+        }
+
+        .info-box {
+            background-color: #d1ecf1;
+            border-left: 4px solid #0c5460;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .button {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>BioID Face Authentication Test</h1>
-        <p>This test page demonstrates the correct OIDC flow with your BioID face authentication system.</p>
+        <h1>🔐 BioID Face Authentication Test</h1>
+        <p>This test page demonstrates the complete OIDC flow with token exchange and user info retrieval.</p>
+        
+        <div class="info-box">
+            <strong>⚠️ CORS Configuration Required</strong>
+            <br><br>
+            This page exchanges the authorization code for tokens, which requires CORS configuration:
+            <ol style="margin-left: 20px; margin-top: 10px; line-height: 1.8;">
+                <li>Go to: <a href="http://localhost:8080/admin" target="_blank" style="color: #0c5460; font-weight: bold;">Admin Console</a></li>
+                <li>Navigate to: <strong>Clients → bioid-demo-client → Settings</strong></li>
+                <li>Scroll to <strong>"Web origins"</strong> field</li>
+                <li>Add: <code style="background: white; padding: 2px 6px; border-radius: 3px;">http://localhost:3000</code> or <code style="background: white; padding: 2px 6px; border-radius: 3px;">+</code></li>
+                <li>Click <strong>"Save"</strong> at the bottom</li>
+                <li>Restart Keycloak: <code style="background: white; padding: 2px 6px; border-radius: 3px;">docker compose restart keycloak</code></li>
+            </ol>
+            <p style="margin-top: 10px;">
+                <strong>Alternative:</strong> Use <a href="simple-test.html" style="color: #0c5460; font-weight: bold;">simple-test.html</a> which works without CORS configuration.
+            </p>
+        </div>
         
         <div id="loginSection">
             <h2>Login Test</h2>
@@ -79,27 +222,51 @@
         </div>
 
         <div id="userSection" style="display: none;">
-            <h2>Authentication Successful!</h2>
+            <h2>✅ Authentication Successful!</h2>
+            
             <div class="user-info">
-                <h3>User Information:</h3>
+                <h3>👤 User Information</h3>
                 <div id="userInfo"></div>
             </div>
             
-            <h3>Account Management</h3>
-            <p>Now that you're authenticated, you can manage your account and face enrollment:</p>
-            <a href="http://localhost:8080/realms/bioid-demo/account" class="button" target="_blank">Manage Account & Face Enrollment</a>
-            <a href="http://localhost:8080/realms/bioid-demo/account/#/security/signingin" class="button" target="_blank">Manage Authentication Methods</a>
+            <div id="credentialInfo" style="background: #e7f3ff; border-left: 4px solid #0066cc; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                <h3>🔐 Face Credentials</h3>
+                <p style="color: #0c5460;">Your face credentials are managed by Keycloak and stored in BioID BWS.</p>
+                <div id="credentialDetails"></div>
+                <div id="enrolledImages" style="margin-top: 15px;"></div>
+            </div>
             
-            <br><br>
-            <button class="button logout-button" onclick="logout()">Logout</button>
+            <h3>⚙️ Account Management</h3>
+            <p>Manage your account and face enrollment:</p>
+            <div class="button-group">
+                <a href="http://localhost:8080/realms/bioid-demo/account" class="button" target="_blank">
+                    👤 Account Management
+                </a>
+                <a href="http://localhost:8080/realms/bioid-demo/account/#/security/signingin" class="button" target="_blank">
+                    📸 Face Enrollment
+                </a>
+            </div>
+            
+            <br>
+            <button class="button logout-button" onclick="logout()">🚪 Logout</button>
+        </div>
+
+        <div id="loadingSection" style="display: none;">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p id="loadingText">Processing authentication...</p>
+            </div>
         </div>
 
         <div id="errorSection" style="display: none;">
             <div class="error">
-                <h3>Authentication Error:</h3>
+                <h3>⚠️ Authentication Error</h3>
                 <div id="errorInfo"></div>
             </div>
-            <button class="button" onclick="clearError()">Try Again</button>
+            <div class="button-group">
+                <button class="button" onclick="clearError()">Try Again</button>
+                <button class="button" onclick="checkSetup()">Check Setup</button>
+            </div>
         </div>
 
         <div id="tokenSection" style="display: none;">
@@ -127,12 +294,15 @@
                 // Clean up URL
                 window.history.replaceState({}, document.title, window.location.pathname);
             } else if (code) {
+                // Show loading while exchanging code
+                showLoading('Exchanging authorization code for tokens...');
                 // Exchange code for tokens
                 exchangeCodeForTokens(code);
             } else {
                 // Check if we have stored tokens
                 const accessToken = localStorage.getItem('access_token');
                 if (accessToken) {
+                    showLoading('Validating session...');
                     validateAndShowUser(accessToken);
                 }
             }
@@ -164,35 +334,62 @@
             try {
                 const codeVerifier = localStorage.getItem('code_verifier');
                 if (!codeVerifier) {
-                    throw new Error('Code verifier not found');
+                    throw new Error('Code verifier not found. Please try logging in again.');
                 }
 
+                console.log('Exchanging authorization code for tokens...');
+                console.log('Code:', code.substring(0, 20) + '...');
+                console.log('Code verifier:', codeVerifier.substring(0, 20) + '...');
+
                 const tokenUrl = `${KEYCLOAK_URL}/realms/${REALM}/protocol/openid-connect/token`;
+                
+                const params = new URLSearchParams({
+                    grant_type: 'authorization_code',
+                    client_id: CLIENT_ID,
+                    code: code,
+                    redirect_uri: REDIRECT_URI,
+                    code_verifier: codeVerifier
+                });
+
+                console.log('Token URL:', tokenUrl);
+                console.log('Request params:', params.toString());
+
                 const response = await fetch(tokenUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                     },
-                    body: new URLSearchParams({
-                        grant_type: 'authorization_code',
-                        client_id: CLIENT_ID,
-                        code: code,
-                        redirect_uri: REDIRECT_URI,
-                        code_verifier: codeVerifier
-                    })
+                    body: params,
+                    mode: 'cors',
+                    credentials: 'include'
                 });
 
+                console.log('Token response status:', response.status);
+
                 if (!response.ok) {
-                    const errorData = await response.text();
-                    throw new Error(`Token exchange failed: ${errorData}`);
+                    let errorData;
+                    try {
+                        errorData = await response.json();
+                        console.error('Token error response:', errorData);
+                        throw new Error(`${errorData.error}: ${errorData.error_description || 'Token exchange failed'}`);
+                    } catch (e) {
+                        const textError = await response.text();
+                        console.error('Token error (text):', textError);
+                        throw new Error(`HTTP ${response.status}: ${textError || 'Token exchange failed'}`);
+                    }
                 }
 
                 const tokens = await response.json();
+                console.log('Tokens received successfully');
                 
                 // Store tokens
                 localStorage.setItem('access_token', tokens.access_token);
-                localStorage.setItem('refresh_token', tokens.refresh_token);
-                localStorage.setItem('id_token', tokens.id_token);
+                if (tokens.refresh_token) {
+                    localStorage.setItem('refresh_token', tokens.refresh_token);
+                }
+                if (tokens.id_token) {
+                    localStorage.setItem('id_token', tokens.id_token);
+                }
 
                 // Clean up
                 localStorage.removeItem('code_verifier');
@@ -202,7 +399,26 @@
                 validateAndShowUser(tokens.access_token);
 
             } catch (error) {
-                showError(`Token exchange error: ${error.message}`);
+                console.error('Token exchange error:', error);
+                
+                // Provide more helpful error messages
+                let errorMessage = error.message;
+                if (error.message.includes('Failed to fetch')) {
+                    errorMessage = 'CORS Error: Cannot connect to Keycloak. This usually means:\n\n' +
+                        '1. Keycloak is not running (check: http://localhost:8080)\n' +
+                        '2. Web Origins not configured in client settings\n' +
+                        '3. Browser is blocking the request\n\n' +
+                        'Fix: Go to Admin Console → Clients → bioid-demo-client → Settings\n' +
+                        'Add to "Web origins": http://localhost:3000 or +';
+                } else if (error.message.includes('invalid_grant')) {
+                    errorMessage = 'Invalid authorization code. This usually means:\n\n' +
+                        '1. The code has already been used\n' +
+                        '2. The code has expired\n' +
+                        '3. The redirect URI doesn\'t match\n\n' +
+                        'Try logging in again.';
+                }
+                
+                showError(errorMessage);
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
         }
@@ -229,7 +445,8 @@
             }
         }
 
-        function showUser(userInfo, accessToken) {
+        async function showUser(userInfo, accessToken) {
+            hideLoading();
             document.getElementById('loginSection').style.display = 'none';
             document.getElementById('errorSection').style.display = 'none';
             document.getElementById('userSection').style.display = 'block';
@@ -238,20 +455,126 @@
             userInfoDiv.innerHTML = `
                 <p><strong>Username:</strong> ${userInfo.preferred_username || 'N/A'}</p>
                 <p><strong>Email:</strong> ${userInfo.email || 'N/A'}</p>
-                <p><strong>First Name:</strong> ${userInfo.given_name || 'N/A'}</p>
-                <p><strong>Last Name:</strong> ${userInfo.family_name || 'N/A'}</p>
-                <p><strong>Subject:</strong> ${userInfo.sub || 'N/A'}</p>
+                <p><strong>Name:</strong> ${userInfo.given_name || ''} ${userInfo.family_name || ''}</p>
+                <p><strong>User ID:</strong> ${userInfo.sub || 'N/A'}</p>
+                <p><strong>Email Verified:</strong> ${userInfo.email_verified ? '✅ Yes' : '❌ No'}</p>
             `;
 
-            // Show token for debugging (optional)
-            const tokenDisplay = document.getElementById('tokenDisplay');
-            const tokenPayload = JSON.parse(atob(accessToken.split('.')[1]));
-            tokenDisplay.textContent = JSON.stringify(tokenPayload, null, 2);
-            document.getElementById('tokenSection').style.display = 'block';
+            // Show credential information from token
+            const credentialDetailsDiv = document.getElementById('credentialDetails');
+            try {
+                const tokenPayload = JSON.parse(atob(accessToken.split('.')[1]));
+                
+                const authTime = tokenPayload.auth_time ? new Date(tokenPayload.auth_time * 1000).toLocaleString() : 'N/A';
+                const expTime = tokenPayload.exp ? new Date(tokenPayload.exp * 1000).toLocaleString() : 'N/A';
+                const acr = tokenPayload.acr || 'N/A';
+                
+                credentialDetailsDiv.innerHTML = `
+                    <p style="color: #0c5460; margin-top: 10px;"><strong>Authentication Details:</strong></p>
+                    <p style="color: #0c5460;"><strong>Authenticated At:</strong> ${authTime}</p>
+                    <p style="color: #0c5460;"><strong>Token Expires:</strong> ${expTime}</p>
+                    <p style="color: #0c5460;"><strong>Authentication Context:</strong> ${acr}</p>
+                `;
+                
+                // Show token for debugging
+                const tokenDisplay = document.getElementById('tokenDisplay');
+                tokenDisplay.textContent = JSON.stringify(tokenPayload, null, 2);
+                document.getElementById('tokenSection').style.display = 'block';
+            } catch (e) {
+                console.error('Failed to decode token:', e);
+                credentialDetailsDiv.innerHTML = `
+                    <p style="color: #0c5460;">Unable to decode token information.</p>
+                `;
+            }
+
+            // Fetch template status and enrolled images
+            await loadTemplateStatus(accessToken);
+        }
+
+        async function loadTemplateStatus(accessToken) {
+            const enrolledImagesDiv = document.getElementById('enrolledImages');
+            
+            try {
+                enrolledImagesDiv.innerHTML = '<p style="color: #0c5460;"><em>Loading template status...</em></p>';
+                
+                const statusUrl = `${KEYCLOAK_URL}/realms/${REALM}/face-api/status`;
+                console.log('Fetching template status from:', statusUrl);
+                
+                const response = await fetch(statusUrl, {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const status = await response.json();
+                console.log('Template status:', status);
+
+                if (!status.enrolled) {
+                    enrolledImagesDiv.innerHTML = `
+                        <p style="color: #856404; background: #fff3cd; padding: 10px; border-radius: 5px;">
+                            ⚠️ No face template enrolled. Please enroll your face in Account Management.
+                        </p>
+                    `;
+                    return;
+                }
+
+                // Display template status
+                let html = `
+                    <div style="background: #d4edda; padding: 15px; border-radius: 5px; margin-top: 10px;">
+                        <p style="color: #155724; margin: 5px 0;"><strong>✅ Template Status:</strong> Enrolled</p>
+                        <p style="color: #155724; margin: 5px 0;"><strong>Class ID:</strong> ${status.classId}</p>
+                        <p style="color: #155724; margin: 5px 0;"><strong>Enrolled At:</strong> ${status.enrolledAt ? new Date(status.enrolledAt).toLocaleString() : 'N/A'}</p>
+                        <p style="color: #155724; margin: 5px 0;"><strong>Encoder Version:</strong> ${status.encoderVersion || 'N/A'}</p>
+                        <p style="color: #155724; margin: 5px 0;"><strong>Feature Vectors:</strong> ${status.featureVectors || 0}</p>
+                        <p style="color: #155724; margin: 5px 0;"><strong>Thumbnails Stored:</strong> ${status.thumbnailsStored || 0}</p>
+                    </div>
+                `;
+
+                // Display enrolled images
+                if (status.thumbnails && status.thumbnails.length > 0) {
+                    html += `
+                        <div style="margin-top: 15px;">
+                            <p style="color: #0c5460; font-weight: bold;">📸 Enrolled Images:</p>
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
+                    `;
+                    
+                    status.thumbnails.forEach((thumb, index) => {
+                        html += `
+                            <div style="text-align: center;">
+                                <img src="${thumb.image}" alt="Enrolled face ${index + 1}" 
+                                     style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px; border: 2px solid #0066cc;">
+                                <p style="font-size: 0.8rem; color: #666; margin-top: 5px;">
+                                    ${thumb.enrolledAt ? new Date(thumb.enrolledAt).toLocaleDateString() : 'N/A'}
+                                </p>
+                            </div>
+                        `;
+                    });
+                    
+                    html += `
+                            </div>
+                        </div>
+                    `;
+                }
+
+                enrolledImagesDiv.innerHTML = html;
+
+            } catch (error) {
+                console.error('Failed to load template status:', error);
+                enrolledImagesDiv.innerHTML = `
+                    <p style="color: #721c24; background: #f8d7da; padding: 10px; border-radius: 5px;">
+                        ⚠️ Failed to load template status: ${error.message}
+                    </p>
+                `;
+            }
         }
 
         function showError(message) {
-            document.getElementById('loginSection').style.display = 'block';
+            hideLoading();
+            document.getElementById('loginSection').style.display = 'none';
             document.getElementById('userSection').style.display = 'none';
             document.getElementById('errorSection').style.display = 'block';
             document.getElementById('tokenSection').style.display = 'none';
@@ -260,6 +583,75 @@
 
         function clearError() {
             document.getElementById('errorSection').style.display = 'none';
+            document.getElementById('loginSection').style.display = 'block';
+        }
+
+        function showLoading(message = 'Processing...') {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('userSection').style.display = 'none';
+            document.getElementById('errorSection').style.display = 'none';
+            document.getElementById('loadingSection').style.display = 'block';
+            document.getElementById('loadingText').textContent = message;
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingSection').style.display = 'none';
+        }
+
+        async function checkSetup() {
+            showLoading('Checking Keycloak configuration...');
+            
+            try {
+                // Check if Keycloak is accessible
+                const healthCheck = await fetch(`${KEYCLOAK_URL}/health/ready`, { mode: 'no-cors' });
+                console.log('Keycloak health check completed');
+
+                // Check if realm exists
+                const realmCheck = await fetch(`${KEYCLOAK_URL}/realms/${REALM}/.well-known/openid-configuration`);
+                if (!realmCheck.ok) {
+                    throw new Error(`Realm '${REALM}' not found`);
+                }
+
+                const config = await realmCheck.json();
+                console.log('Realm configuration:', config);
+
+                hideLoading();
+                
+                const setupInfo = `
+✅ Setup Check Results:
+
+Keycloak URL: ${KEYCLOAK_URL}
+Realm: ${REALM}
+Client ID: ${CLIENT_ID}
+Redirect URI: ${REDIRECT_URI}
+
+Authorization Endpoint: ${config.authorization_endpoint}
+Token Endpoint: ${config.token_endpoint}
+
+Common Issues:
+1. Web Origins not configured
+   → Go to Admin Console → Clients → ${CLIENT_ID} → Settings
+   → Add to "Web origins": ${window.location.origin} or +
+
+2. Redirect URI not allowed
+   → Add to "Valid redirect URIs": ${REDIRECT_URI}
+
+3. PKCE not enabled
+   → Go to Advanced tab
+   → Set "Proof Key for Code Exchange Code Challenge Method" to S256
+
+4. Client authentication enabled (should be OFF for public clients)
+   → Go to Settings tab
+   → Set "Client authentication" to OFF
+                `;
+
+                alert(setupInfo);
+                document.getElementById('loginSection').style.display = 'block';
+
+            } catch (error) {
+                hideLoading();
+                showError(`Setup check failed: ${error.message}\n\nMake sure Keycloak is running at ${KEYCLOAK_URL}`);
+            }
         }
 
         async function logout() {

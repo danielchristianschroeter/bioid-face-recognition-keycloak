@@ -7,6 +7,7 @@ import java.util.Map;
 /**
  * Represents a data consistency issue between Keycloak and BioID systems
  */
+@SuppressWarnings("auxiliaryclass")
 public class ConsistencyIssue {
     
     private String issueId;

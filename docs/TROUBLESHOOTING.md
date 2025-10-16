@@ -481,7 +481,7 @@ grep -i "authentication" /opt/keycloak/data/log/keycloak.log | grep -i "face"
 ### Health Check Commands
 
 ```bash
-# Extension health check
+# Administrative health check (comprehensive)
 curl -s http://localhost:8080/admin/realms/master/face-recognition/health
 
 # Keycloak health check
@@ -489,6 +489,13 @@ curl -s http://localhost:8080/health
 
 # BioID connectivity test
 curl -v https://face.bws-eu.bioid.com
+
+# Component-specific health checks
+curl -s http://localhost:8080/admin/realms/master/face-recognition/health | jq '.componentHealth'
+
+# Health check with authentication
+curl -s -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8080/admin/realms/master/face-recognition/health
 ```
 
 ### Configuration Verification
@@ -511,12 +518,165 @@ curl -s -H "Authorization: Bearer $TOKEN" \
 # JVM metrics
 jstat -gc -t $(pgrep java) 5s
 
-# Connection metrics
+# Administrative metrics (Prometheus format)
 curl -s http://localhost:8080/admin/realms/master/face-recognition/metrics
+
+# Metrics summary (JSON format)
+curl -s http://localhost:8080/admin/realms/master/face-recognition/metrics/summary
+
+# Specific metric queries
+curl -s http://localhost:8080/admin/realms/master/face-recognition/metrics | grep "bioid.admin.liveness"
 
 # Database connections
 psql -c "SELECT count(*) FROM pg_stat_activity WHERE datname = 'keycloak';"
+
+# Trace statistics
+curl -s -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8080/admin/realms/master/face-recognition/traces/stats
+
+# Log aggregation statistics
+curl -s -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8080/admin/realms/master/face-recognition/logs/stats
 ```
+
+### Monitoring and Observability Issues
+
+#### Issue: Metrics Not Being Collected
+
+**Symptoms:**
+- Metrics endpoint returns empty or minimal data
+- Prometheus scraping fails
+- Dashboard shows no data
+
+**Diagnosis:**
+```bash
+# Check metrics collector service status
+curl -s http://localhost:8080/admin/realms/master/face-recognition/metrics/stats
+
+# Verify metrics registration
+grep -i "metrics" /opt/keycloak/data/log/keycloak.log
+
+# Check MicroProfile Metrics availability
+curl -s http://localhost:8080/metrics
+```
+
+**Solutions:**
+1. **Metrics Service Not Started:**
+   ```bash
+   # Check if metrics collector is running
+   grep "metrics.*started" /opt/keycloak/data/log/keycloak.log
+   
+   # Restart Keycloak if needed
+   systemctl restart keycloak
+   ```
+
+2. **Insufficient Permissions:**
+   ```bash
+   # Verify admin user has proper roles
+   /opt/keycloak/bin/kcadm.sh get users/admin-user-id/role-mappings
+   ```
+
+#### Issue: Health Checks Failing
+
+**Symptoms:**
+- Health endpoint returns unhealthy status
+- Components showing degraded state
+- Monitoring alerts firing
+
+**Diagnosis:**
+```bash
+# Get detailed health status
+curl -s http://localhost:8080/admin/realms/master/face-recognition/health | jq '.'
+
+# Check individual component health
+curl -s http://localhost:8080/admin/realms/master/face-recognition/health | jq '.componentHealth'
+
+# Review health check logs
+grep -i "health.*check" /opt/keycloak/data/log/keycloak.log
+```
+
+**Solutions:**
+1. **Component-Specific Issues:**
+   - Check BioID service connectivity
+   - Verify database connections
+   - Review connection pool status
+
+2. **Health Check Configuration:**
+   ```properties
+   # Adjust health check thresholds
+   health.response.time.threshold=10s
+   health.error.rate.threshold=0.1
+   ```
+
+#### Issue: Alerts Not Firing
+
+**Symptoms:**
+- No alerts despite issues
+- Alert suppression too aggressive
+- Missing alert notifications
+
+**Diagnosis:**
+```bash
+# Check alerting service status
+grep -i "alerting.*service" /opt/keycloak/data/log/keycloak.log
+
+# Review alert configuration
+cat /opt/keycloak/conf/monitoring.properties | grep alert
+
+# Check alert suppression status
+curl -s -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8080/admin/realms/master/face-recognition/alerts/stats
+```
+
+**Solutions:**
+1. **Alerting Service Configuration:**
+   ```properties
+   # Lower alert thresholds for testing
+   alert.error.rate.threshold=0.01
+   alert.suppression.duration=5m
+   ```
+
+2. **Clear Alert Suppressions:**
+   ```bash
+   # Clear all suppressions via admin API
+   curl -X DELETE -H "Authorization: Bearer $TOKEN" \
+     http://localhost:8080/admin/realms/master/face-recognition/alerts/suppressions
+   ```
+
+#### Issue: Distributed Tracing Not Working
+
+**Symptoms:**
+- No trace data available
+- Correlation IDs missing from logs
+- Trace context not propagated
+
+**Diagnosis:**
+```bash
+# Check tracing service status
+grep -i "tracing" /opt/keycloak/data/log/keycloak.log
+
+# Verify trace statistics
+curl -s -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8080/admin/realms/master/face-recognition/traces/stats
+
+# Check for correlation IDs in logs
+grep "correlationId" /opt/keycloak/data/log/keycloak.log | head -5
+```
+
+**Solutions:**
+1. **Enable Tracing:**
+   ```properties
+   # Enable distributed tracing
+   tracing.enabled=true
+   tracing.max.trace.duration=1h
+   ```
+
+2. **Trace Cleanup:**
+   ```bash
+   # Clean up expired traces
+   curl -X POST -H "Authorization: Bearer $TOKEN" \
+     http://localhost:8080/admin/realms/master/face-recognition/traces/cleanup
+   ```
 
 ## Getting Additional Help
 

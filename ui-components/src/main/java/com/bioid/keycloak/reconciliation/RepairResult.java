@@ -7,6 +7,7 @@ import java.util.List;
 /**
  * Result of a repair operation for consistency issues
  */
+@SuppressWarnings("auxiliaryclass")
 public class RepairResult {
     
     private String realmId;

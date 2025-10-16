@@ -6,12 +6,20 @@
 # Environment variables use uppercase with underscores (e.g., BWS_ENDPOINT)
 # System properties use the exact property names below
 
+# =============================================================================
+# REQUIRED CONFIGURATION
+# =============================================================================
+
 # BioID BWS Service Configuration
 # Required: Get these from https://bwsportal.bioid.com/register
-bioid.endpoint=https://face.bws-eu.bioid.com
+bioid.endpoint=.bws-eu.bioid.com
 bioid.clientId=YOUR_BWS_CLIENT_ID
 bioid.key=YOUR_BWS_KEY
 bioid.jwtExpireMinutes=60
+
+# =============================================================================
+# BIOID SERVICE CONFIGURATION
+# =============================================================================
 
 # Verification Settings
 verification.threshold=0.015
@@ -27,6 +35,69 @@ template.cleanupInterval.hours=24
 template.type=STANDARD
 template.encryption.enabled=true
 
+# =============================================================================
+# LIVENESS DETECTION CONFIGURATION
+# =============================================================================
+
+# BioID BWS Liveness Detection Modes:
+# The BioID Web Service automatically determines the liveness detection mode based on 
+# the number of images and tags provided in the LivenessDetection API call:
+#
+# PASSIVE MODE (1 image):
+#   - Texture-based liveness detection (ALWAYS performed by BWS)
+#   - Analyzes image properties to detect spoofing attempts
+#   - Fastest mode but provides basic protection
+#
+# ACTIVE MODE (2 images):
+#   - Passive liveness detection on both images (automatic)
+#   - Motion-based 3D detection between consecutive images
+#   - Requires natural head movement between captures
+#   - Better security than passive-only mode
+#
+# CHALLENGE-RESPONSE MODE (2 images with tags):
+#   - All passive and active liveness detection (automatic)
+#   - Additional validation of specific head movement directions
+#   - Tags specify required directions: UP, DOWN, LEFT, RIGHT
+#   - Highest security level, defeats deepfakes and recorded videos
+
+# Active liveness detection (requires 2 images)
+# When enabled, the system will capture 2 images for motion-based detection
+# Note: Passive liveness is always performed by BWS - no configuration needed
+liveness.active.enabled=true
+
+# Challenge-response liveness detection (requires 2 images with direction tags)
+# Validates that head moved in the specific requested direction (UP/DOWN/LEFT/RIGHT)
+# Provides highest security against deepfakes and recorded videos
+liveness.challengeResponse.enabled=false
+
+# Liveness confidence threshold (0.0-1.0)
+# Higher values = stricter liveness requirements
+# Recommended: 0.5 for balanced security/usability, 0.7+ for high security
+liveness.confidenceThreshold=0.5
+
+# Maximum additional processing time for liveness detection (milliseconds)
+# Limits how much extra time liveness detection can add to authentication
+liveness.maxOverheadMs=200
+
+# Adaptive liveness mode
+# Automatically adjusts liveness requirements based on image quality and risk factors
+liveness.adaptiveMode=false
+
+# Fallback to password authentication
+# Allow users to use password if liveness detection fails repeatedly
+# Recommended: false for better security
+liveness.fallbackToPassword=false
+
+# Challenge generation settings (for challenge-response mode)
+# Number of challenge directions to request (1-4, recommended: 1-2)
+liveness.challengeCount=1
+# Timeout for user to complete challenge directions (seconds)
+liveness.challengeTimeoutSeconds=30
+
+# =============================================================================
+# GRPC AND NETWORKING CONFIGURATION
+# =============================================================================
+
 # gRPC Connection Settings
 grpc.channelPool.size=5
 grpc.keepAlive.timeSeconds=30
@@ -37,18 +108,67 @@ grpc.retry.backoffMultiplier=2.0
 healthCheck.interval.seconds=30
 healthCheck.timeout.seconds=5
 
+# =============================================================================
+# REGIONAL AND DATA RESIDENCY CONFIGURATION
+# =============================================================================
+
 # Regional Endpoint Settings
 regional.preferredRegion=EU
 regional.dataResidencyRequired=false
 regional.failoverEnabled=true
 regional.latencyThresholdMs=1000
 
-# Liveness Detection Settings
-liveness.enabled=true
-liveness.passive.enabled=true
-liveness.active.enabled=false
-liveness.challengeResponse.enabled=false
-liveness.confidenceThreshold=0.5
-liveness.maxOverheadMs=200
-liveness.adaptiveMode=false
-liveness.fallbackToPassword=true
+# =============================================================================
+# DEBUG AND DEVELOPMENT CONFIGURATION
+# =============================================================================
+
+# Image Debug Storage
+# When enabled, saves all images sent to BWS locally for debugging
+# WARNING: This stores biometric data locally - use only in development!
+# Images are organized by: {DEBUG_IMAGE_STORAGE_PATH}/{username}/{operation}/{timestamp}/
+debug.image.storage.enabled=false
+debug.image.storage.path=./debug-images
+# Include metadata JSON file with each image (user, operation, timestamp, result)
+debug.image.storage.includeMetadata=true
+
+# =============================================================================
+# AUDIT AND COMPLIANCE CONFIGURATION
+# =============================================================================
+
+# Audit Configuration
+# bioid.audit.detailed.enabled=true
+# bioid.audit.retention.days=365
+# bioid.audit.cleanup.enabled=false
+# bioid.audit.siem.enabled=false
+# bioid.audit.siem.endpoint=
+# bioid.audit.siem.apikey=
+# bioid.audit.compliance.enabled=true
+# bioid.audit.log.level=INFO
+# bioid.audit.batch.size=1000
+# bioid.audit.encrypt.sensitive=true
+# bioid.audit.directory=
+
+# =============================================================================
+# REPORTING AND STORAGE CONFIGURATION
+# =============================================================================
+
+# Reports Configuration
+# bioid.reports.directory=
+
+# =============================================================================
+# ADDITIONAL CONFIGURATION
+# =============================================================================
+
+# Enrollment Configuration
+# bioid.enrollment.min.frames=3
+# bioid.enrollment.max.attempts=5
+# bioid.image.max.size.mb=10
+# bioid.session.state.max.size=1048576
+# bioid.credential.ttl.days=365
+
+# Monitoring Settings
+# monitoring.enabled=false
+
+# Debug Settings
+# bioid.debug.enabled=false
+# bioid.test.mode=false

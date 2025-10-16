@@ -8,31 +8,45 @@ A comprehensive Keycloak extension that integrates BioID's face recognition tech
 - Face-based user authentication with configurable verification thresholds
 - Multi-frame enrollment process with quality validation
 - Automatic retry logic with fallback to traditional authentication
-- Regional endpoint support (EU, US, SA) with automatic failover
+- Regional endpoint support with automatic failover
+- gRPC-based communication with BioID BWS 3 service
 
 ### Liveness Detection
-- Passive liveness detection with configurable confidence thresholds
-- Active liveness detection with user interaction prompts
-- Challenge-response liveness with directional movement validation
-- Configurable liveness enforcement based on risk assessment
+- **Passive liveness detection** - Automatic detection without user interaction (< 200ms overhead)
+- **Active smile detection** - User interaction with smile challenge (< 500ms processing)
+- **Challenge-response detection** - Head movement challenges for highest security (< 1000ms)
+- **Combined detection** - Multiple methods for maximum security with adaptive experience
+- Configurable confidence thresholds and risk-based enforcement
+
+### Security & Privacy
+- **Secure credential storage** with encryption and secure memory handling
+- **TLS configuration** with mutual TLS support for enhanced security
+- **Input validation** for images, metadata, and file paths to prevent attacks
+- **Rate limiting** to prevent abuse and DoS attacks
+- **Privacy protection** with GDPR-compliant data retention policies
+- **Audit logging** for all biometric operations and privacy events
+- **Zero persistence** of raw biometric data with immediate cleanup
 
 ### Administrative Management
-- Comprehensive admin console integration with PatternFly UI
-- Real-time configuration management and validation
-- BioID service connectivity testing and monitoring
-- Template lifecycle management with automatic cleanup
+- **Bulk operations** for user management and template operations
+- **Template lifecycle management** with automatic cleanup and health monitoring
+- **Liveness service management** with real-time configuration
+- **Admin dashboard** with comprehensive metrics and status information
+- **Health checks** and connectivity testing for BioID services
 
-### Privacy and Compliance
-- GDPR-compliant biometric template deletion workflows
-- User-initiated deletion requests with admin approval process
-- Comprehensive audit logging for all biometric operations
-- Zero persistence of raw biometric data with immediate cleanup
+### User REST API
+- **Template status API** - View enrollment status and metadata
+- **Enrolled images API** - Retrieve thumbnail images from BWS
+- **Credential management API** - Delete face credentials programmatically
+- **Full CORS support** - Works from any origin for easy integration
+- **Bearer token authentication** - Secure access with OIDC tokens
 
 ### Monitoring and Observability
-- MicroProfile metrics integration for performance monitoring
-- Health check endpoints for service availability monitoring
-- Comprehensive event logging for administrative oversight
-- Connection pool monitoring and optimization
+- **Comprehensive metrics** via Micrometer integration
+- **Health check endpoints** for readiness and liveness probes
+- **Connection monitoring** with pool metrics and performance tracking
+- **Prometheus metrics export** for monitoring integration
+- **Structured logging** with operation summaries and audit trails
 
 ## Architecture
 
@@ -40,19 +54,20 @@ The extension is built as a multi-module Maven project:
 
 ```
 keycloak-bioid-extension/
-├── bioid-client/           # BioID gRPC client and configuration
+├── bioid-client/           # BioID gRPC client and core services
 ├── face-authenticator/     # Authentication flow integration
 ├── face-credential/        # Credential provider implementation
 ├── face-enroll-action/     # Required action for enrollment
 ├── ui-components/          # Admin UI and REST endpoints
-└── assembly/              # Final JAR assembly
+├── deployment/             # Final JAR assembly and packaging
+└── integration-tests/      # Integration and end-to-end tests
 ```
 
 ## Prerequisites
 
 - Java 21 or higher
 - Maven 3.8 or higher
-- Keycloak 24.0 or higher
+- Keycloak 26.0 or higher
 - BioID BWS 3 account and credentials
 - Docker and Docker Compose (for development)
 
@@ -63,7 +78,7 @@ keycloak-bioid-extension/
 🔧 **Manual setup**: See [MANUAL_SETUP.md](MANUAL_SETUP.md) for manual realm configuration without automatic import  
 🧹 **Clean start**: Use `./clean-setup.sh` (Linux/Mac) or `clean-setup.bat` (Windows) to reset everything  
 🧪 **Test setup**: Use `./test-face-auth.sh` (Linux/Mac) or `test-face-auth.bat` (Windows) to verify your setup  
-⚠️ **Build notes**: See [BUILD_ISSUES.md](BUILD_ISSUES.md) for information about test compilation issues
+⚠️ **Build notes**: Some integration tests may have compilation issues due to gRPC code generation timing. Use `-DskipTests` for clean builds.
 
 The easiest way to get started is using the provided Docker Compose setup:
 
@@ -75,7 +90,7 @@ cd keycloak-bioid-extension
 mvn clean package -DskipTests
 ```
 
-> **Note**: Some tests have compilation issues due to gRPC code generation timing. The extension builds and works perfectly. See [BUILD_ISSUES.md](BUILD_ISSUES.md) for details.
+> **Note**: Some integration tests may have compilation issues due to gRPC code generation timing. The extension builds and works perfectly when using `-DskipTests`.
 
 ### 2. Configure BioID Credentials
 
@@ -213,7 +228,83 @@ Users can enroll their face biometrics through:
 2. **Required Action**: Automatic enrollment during first login
 3. **Admin Interface**: Administrators can manage user enrollments
 
+## Testing the Extension
+
+### Test Applications
+
+The project includes two test applications for quick testing:
+
+#### simple-test.html
+A minimal test page that demonstrates the authentication flow without requiring CORS configuration:
+
+```bash
+# Serve the test page
+python -m http.server 3000
+
+# Or use Node.js
+npx http-server -p 3000
+
+# Open in browser
+http://localhost:3000/simple-test.html
+```
+
+**Features:**
+- No CORS configuration needed
+- Direct authorization code flow
+- Quick login/logout testing
+- Minimal dependencies
+
+#### test-app.html
+A comprehensive test application with full token exchange and user info display:
+
+```bash
+# Start test server
+cd test-server
+npm install
+npm start
+
+# Open in browser
+http://localhost:3000/test-app.html
+```
+
+**Features:**
+- Complete OIDC flow with token exchange
+- User information display
+- Template status and enrolled images via REST API
+- Face credential management
+- Requires CORS configuration (see [KEYCLOAK_CLIENT_SETUP.md](docs/KEYCLOAK_CLIENT_SETUP.md))
+
+**CORS Setup for test-app.html:**
+1. Go to Admin Console → Clients → bioid-demo-client → Settings
+2. Add to "Web origins": `http://localhost:3000` or `+`
+3. Save and restart Keycloak
+
+### Quick Testing Guide
+
+See [QUICK_START_TESTING.md](docs/QUICK_START_TESTING.md) for a step-by-step testing guide.
+
 ## API Endpoints
+
+### User-Facing REST API
+
+```
+GET    /realms/{realm}/face-api/status          # Get template status and enrolled images
+DELETE /realms/{realm}/face-api/template        # Delete face credentials
+```
+
+**Authentication:** Requires valid access token (Bearer authentication)
+
+**Example:**
+```bash
+# Get template status with enrolled images
+curl -H "Authorization: Bearer $ACCESS_TOKEN" \
+  http://localhost:8080/realms/bioid-demo/face-api/status
+
+# Delete face credentials
+curl -X DELETE \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  http://localhost:8080/realms/bioid-demo/face-api/template
+```
 
 ### Administrative Endpoints
 
@@ -225,17 +316,25 @@ GET    /admin/realms/{realm}/face-recognition/metrics
 GET    /admin/realms/{realm}/face-recognition/health
 ```
 
-### Deletion Request Management
+### Bulk Operations & Template Management
 
 ```
-GET    /admin/realms/{realm}/face-recognition/deletion-requests
-POST   /admin/realms/{realm}/face-recognition/deletion-requests
-GET    /admin/realms/{realm}/face-recognition/deletion-requests/{id}
-POST   /admin/realms/{realm}/face-recognition/deletion-requests/{id}/approve
-POST   /admin/realms/{realm}/face-recognition/deletion-requests/{id}/decline
-POST   /admin/realms/{realm}/face-recognition/deletion-requests/{id}/cancel
-POST   /admin/realms/{realm}/face-recognition/deletion-requests/bulk-approve
-POST   /admin/realms/{realm}/face-recognition/deletion-requests/bulk-decline
+GET    /admin/realms/{realm}/face-recognition/bulk-operations
+POST   /admin/realms/{realm}/face-recognition/bulk-operations
+GET    /admin/realms/{realm}/face-recognition/bulk-operations/{id}
+POST   /admin/realms/{realm}/face-recognition/bulk-operations/{id}/cancel
+GET    /admin/realms/{realm}/face-recognition/templates
+POST   /admin/realms/{realm}/face-recognition/templates/cleanup
+GET    /admin/realms/{realm}/face-recognition/templates/health
+```
+
+### Liveness Detection Management
+
+```
+GET    /admin/realms/{realm}/face-recognition/liveness/config
+PUT    /admin/realms/{realm}/face-recognition/liveness/config
+POST   /admin/realms/{realm}/face-recognition/liveness/test
+GET    /admin/realms/{realm}/face-recognition/liveness/statistics
 ```
 
 ### Health and Metrics
@@ -263,6 +362,31 @@ mvn package
 # Skip integration tests (requires BioID credentials)
 mvn package -DskipTests
 ```
+
+### Dependency Management
+
+Keep dependencies up to date for security and performance:
+
+```bash
+# Check for dependency updates (Linux/Mac)
+./scripts/check-dependencies.sh
+
+# Check for dependency updates (Windows)
+scripts\check-dependencies.bat
+
+# Update dependencies safely (Linux/Mac)
+./scripts/update-dependencies.sh
+
+# Manual dependency checks
+mvn versions:display-dependency-updates
+mvn org.owasp:dependency-check-maven:check
+```
+
+**Automated Updates:**
+- Dependabot runs weekly to check for updates
+- Security scans run on every PR and weekly
+- See `DEPENDENCY_MANAGEMENT.md` for quick reference
+- See `docs/DEVELOPMENT.md` for detailed dependency management guide
 
 ### Running Tests
 
@@ -302,27 +426,31 @@ docker compose down
 ### Code Structure
 
 ```
-src/main/java/com/bioid/keycloak/
-├── admin/                  # Admin REST endpoints and DTOs
-├── authenticator/          # Face authentication flow
-├── client/                # BioID gRPC client
-├── credential/            # Credential provider
-├── enroll/               # Enrollment required action
-├── health/               # Health check providers
-└── metrics/              # Metrics collection
+bioid-client/src/main/java/com/bioid/keycloak/client/
+├── admin/                  # Admin services and bulk operations
+├── auth/                   # JWT token provider for BioID authentication
+├── config/                 # Configuration management and validation
+├── connection/             # gRPC connection management and pooling
+├── health/                 # Health check providers and status monitoring
+├── liveness/               # Liveness detection services and configuration
+├── metrics/                # Metrics collection and Prometheus export
+├── privacy/                # GDPR compliance and data retention
+├── security/               # Security validation, TLS, and credential storage
+└── tracing/                # Distributed tracing and span management
 ```
 
 ## Monitoring
 
 ### Metrics
 
-The extension exposes comprehensive metrics via MicroProfile:
+The extension exposes comprehensive metrics via Micrometer:
 
-- `face_recognition_enroll_success_total` - Successful enrollments
-- `face_recognition_verify_success_total` - Successful verifications
-- `face_recognition_bioid_latency_ms` - BioID service latency
-- `face_recognition_deletion_request_*` - Deletion request metrics
-- `face_recognition_health_check_*` - Health check metrics
+- **Authentication Metrics**: Success/failure rates, verification latency
+- **Connection Metrics**: Pool utilization, connection health, gRPC call metrics
+- **Admin Metrics**: Bulk operation progress, template management statistics
+- **Security Metrics**: Rate limiting, validation failures, security events
+- **Liveness Metrics**: Detection success rates, method performance, confidence scores
+- **Privacy Metrics**: Data retention compliance, audit events, deletion requests
 
 ### Health Checks
 
@@ -422,10 +550,27 @@ This project is licensed under the Apache License 2.0. See the LICENSE file for 
 
 For detailed information, see the documentation in the `docs/` directory:
 
+### Getting Started
+- [Setup Guide](docs/SETUP.md) - Complete setup instructions with Docker Compose
+- [Windows Setup](docs/WINDOWS-SETUP.md) - Windows-specific setup and troubleshooting
+- [Quick Start Testing](docs/QUICK_START_TESTING.md) - Fast testing with simple-test.html
+- [Keycloak Client Setup](docs/KEYCLOAK_CLIENT_SETUP.md) - Client configuration for OIDC
+
+### Development & Testing
 - [Development Guide](docs/DEVELOPMENT.md) - Development setup and guidelines
+- [Testing Guide](docs/TESTING.md) - Comprehensive testing strategies
+- [Complete Testing Guide](docs/COMPLETE_TESTING_GUIDE.md) - End-to-end testing procedures
+
+### Deployment & Operations
 - [Deployment Guide](docs/DEPLOYMENT.md) - Production deployment instructions
-- [Testing Guide](docs/TESTING.md) - Testing strategies and procedures
+- [REST API Setup](docs/REST_API_SETUP.md) - REST API configuration and usage
+- [Monitoring Guide](docs/MONITORING.md) - Metrics, health checks, and observability
 - [Troubleshooting Guide](docs/TROUBLESHOOTING.md) - Common issues and solutions
+
+### Features & Security
+- [Active Liveness Detection](docs/ACTIVE_LIVENESS_DETECTION.md) - Liveness detection features
+- [Security Guide](docs/SECURITY.md) - Security best practices and compliance
+- [Dependency Management](docs/DEPENDENCY_MANAGEMENT.md) - Keeping dependencies updated
 
 ## Changelog
 
@@ -433,6 +578,6 @@ For detailed information, see the documentation in the `docs/` directory:
 - Initial release with face authentication
 - Admin console integration
 - GDPR-compliant deletion workflows
-- MicroProfile metrics and health checks
+- Micrometer metrics and health checks
 - Multi-region support with failover
 - Comprehensive liveness detection

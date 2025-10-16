@@ -62,13 +62,14 @@ public class LivenessDetectionClient {
      * @return the liveness detection response
      * @throws BioIdException if the operation fails
      */
-    public LivenessDetectionResponse livenessDetection(LivenessDetectionRequest request) throws BioIdException {
-        // Validate request
-        LivenessDetectionErrorHandler.validateLivenessRequest(
-            request.getLiveImages().stream().map(img -> img.getImageBytes()).toList(),
-            request.getMode(),
-            request.getChallengeDirections()
-        );
+    public LivenessResult livenessDetection(LivenessDetectionRequest request) throws BioIdException {
+        // Validate request - basic validation
+        if (request.getLiveImages() == null || request.getLiveImages().isEmpty()) {
+            throw new BioIdException("At least one live image is required");
+        }
+        if (request.getLiveImages().size() > 2) {
+            throw new BioIdException("Maximum 2 images allowed for liveness detection");
+        }
 
         // In a real implementation, this would make a gRPC call to the BioID service
         // For integration testing, we simulate the response
@@ -81,7 +82,7 @@ public class LivenessDetectionClient {
      * @param request the liveness detection request
      * @return a CompletableFuture containing the liveness detection response
      */
-    public CompletableFuture<LivenessDetectionResponse> livenessDetectionAsync(LivenessDetectionRequest request) {
+    public CompletableFuture<LivenessResult> livenessDetectionAsync(LivenessDetectionRequest request) {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 return livenessDetection(request);
@@ -114,7 +115,7 @@ public class LivenessDetectionClient {
      * Simulates a liveness detection response for testing purposes.
      * In a real implementation, this would be replaced with actual gRPC calls.
      */
-    private LivenessDetectionResponse simulateLivenessDetectionResponse(LivenessDetectionRequest request) {
+    private LivenessResult simulateLivenessDetectionResponse(LivenessDetectionRequest request) {
         // Simulate processing based on mode
         boolean isLive = true;
         double livenessScore = 0.85 + (random.nextDouble() * 0.1); // 0.85-0.95
@@ -125,17 +126,28 @@ public class LivenessDetectionClient {
             livenessScore = 0.3 + (random.nextDouble() * 0.3); // 0.3-0.6
         }
         
-        return new LivenessDetectionResponse(
+        // Convert LivenessMode to LivenessMethod
+        LivenessMethod method = LivenessMethod.PASSIVE; // Default
+        if (request.getMode() == LivenessMode.ACTIVE) {
+            method = LivenessMethod.ACTIVE_SMILE;
+        } else if (request.getMode() == LivenessMode.CHALLENGE_RESPONSE) {
+            method = LivenessMethod.CHALLENGE_RESPONSE;
+        }
+        
+        return new LivenessResult(
             isLive,
             livenessScore,
-            request.getMode(),
-            Collections.emptyList() // No errors in simulation
+            method,
+            java.time.Duration.ofMillis(100), // Simulated processing time
+            LivenessQuality.GOOD
         );
     }
 
     /**
      * Response from liveness detection operation.
+     * @deprecated Use LivenessResult instead
      */
+    @Deprecated
     public static class LivenessDetectionResponse {
         private final boolean live;
         private final double livenessScore;

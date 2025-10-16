@@ -2,9 +2,11 @@ package com.bioid.keycloak.client.connection;
 
 import com.bioid.keycloak.client.config.BioIdClientConfig;
 import com.bioid.keycloak.client.exception.BioIdServiceException;
+import com.bioid.keycloak.client.security.TlsConfiguration;
 import io.grpc.ManagedChannel;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.netty.channel.ChannelOption;
+import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -30,6 +32,7 @@ public class BioIdConnectionManager implements AutoCloseable {
 
   private final BioIdClientConfig config;
   private final MeterRegistry meterRegistry;
+  private final TlsConfiguration tlsConfiguration;
 
   // Connection pool
   private final ManagedChannel[] channels;
@@ -63,6 +66,13 @@ public class BioIdConnectionManager implements AutoCloseable {
     this.config = config;
     this.meterRegistry = meterRegistry;
     this.currentEndpoint = new AtomicReference<>(config.endpoint());
+    
+    // Initialize TLS configuration
+    this.tlsConfiguration = TlsConfiguration.builder()
+        .tlsEnabled(config.tlsEnabled())
+        .mutualTlsEnabled(config.mutualTlsEnabled())
+        .keyStorePath(config.keyStorePath())
+        .build();
 
     // Initialize metrics
     this.connectionAttempts =
@@ -290,14 +300,21 @@ public class BioIdConnectionManager implements AutoCloseable {
                   ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) config.connectTimeout().toMillis())
               .withOption(ChannelOption.SO_KEEPALIVE, true);
 
-      // Configure TLS - always use TLS for BioID BWS
-      if (config.mutualTlsEnabled() && config.keyStorePath() != null) {
-        // Mutual TLS configuration would go here
-        logger.debug("Mutual TLS configuration not yet implemented");
+      // Configure TLS with enhanced security
+      try {
+        SslContext sslContext = tlsConfiguration.createSslContext();
+        if (sslContext != null) {
+          builder.sslContext(sslContext);
+          logger.debug("Configured enhanced TLS with SSL context for target: {}", target);
+        } else {
+          // Fallback to basic transport security
+          builder.useTransportSecurity();
+          logger.debug("Using basic transport security for target: {}", target);
+        }
+      } catch (Exception e) {
+        logger.warn("Failed to configure enhanced TLS, falling back to basic security: {}", e.getMessage());
+        builder.useTransportSecurity();
       }
-
-      // Use transport security for HTTPS/gRPC-TLS
-      builder.useTransportSecurity();
 
       logger.debug("Configured gRPC channel with TLS for target: {}", target);
 

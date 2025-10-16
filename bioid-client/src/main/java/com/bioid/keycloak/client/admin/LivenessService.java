@@ -5,7 +5,7 @@ import com.bioid.keycloak.client.admin.model.LivenessStatistics;
 import com.bioid.keycloak.client.admin.model.LivenessTestResult;
 import com.bioid.keycloak.client.exception.BioIdException;
 import com.bioid.keycloak.client.liveness.LivenessDetectionRequest;
-import com.bioid.keycloak.client.liveness.LivenessDetectionResponse;
+import com.bioid.keycloak.client.liveness.LivenessResult;
 
 import java.time.LocalDate;
 
@@ -22,7 +22,7 @@ public interface LivenessService {
      * @return detailed liveness detection response with results and metadata
      * @throws BioIdException if liveness detection fails
      */
-    LivenessDetectionResponse performLivenessDetection(LivenessDetectionRequest request) throws BioIdException;
+    LivenessResult performLivenessDetection(LivenessDetectionRequest request) throws BioIdException;
 
     /**
      * Retrieves the current liveness detection configuration for a realm.

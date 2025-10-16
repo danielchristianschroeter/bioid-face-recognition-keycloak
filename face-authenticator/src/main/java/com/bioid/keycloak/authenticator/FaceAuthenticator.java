@@ -77,11 +77,32 @@ public class FaceAuthenticator implements Authenticator {
     }
 
     int retryCount = getRetryCount(context);
+    
+    // Get liveness configuration from BioIdConfiguration
+    com.bioid.keycloak.client.config.BioIdConfiguration bioIdConfig = 
+        com.bioid.keycloak.client.config.BioIdConfiguration.getInstance();
+    
+    logger.info("Liveness config - Active: {}, Challenge-Response: {}, Threshold: {}", 
+                bioIdConfig.isLivenessActiveEnabled(), 
+                bioIdConfig.isLivenessChallengeResponseEnabled(), 
+                bioIdConfig.getLivenessConfidenceThreshold());
+    
+    // Debug logging for liveness configuration
+    logger.info("Liveness configuration - Active: {}, Challenge-Response: {}, Confidence: {}, Timeout: {}s", 
+                bioIdConfig.isLivenessActiveEnabled(),
+                bioIdConfig.isLivenessChallengeResponseEnabled(),
+                bioIdConfig.getLivenessConfidenceThreshold(),
+                bioIdConfig.getLivenessChallengeTimeout().toSeconds());
+
     Response challenge =
         context
             .form()
             .setAttribute("maxRetries", getMaxRetries(context))
             .setAttribute("retryCount", retryCount)
+            .setAttribute("livenessActiveEnabled", bioIdConfig.isLivenessActiveEnabled())
+            .setAttribute("livenessChallengeResponseEnabled", bioIdConfig.isLivenessChallengeResponseEnabled())
+            .setAttribute("livenessConfidenceThreshold", bioIdConfig.getLivenessConfidenceThreshold())
+            .setAttribute("livenessChallengeTimeoutSeconds", (int) bioIdConfig.getLivenessChallengeTimeout().toSeconds())
             .createForm("face-authenticate.ftl");
     context.challenge(challenge);
   }
@@ -89,29 +110,39 @@ public class FaceAuthenticator implements Authenticator {
   /** Called when the user submits the verification form from the UI. */
   @Override
   public void action(AuthenticationFlowContext context) {
-    MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
-    String imageData = formData.getFirst("imageData");
-
-    if (imageData == null || imageData.isEmpty()) {
-      handleFailure(context, "No image data provided. Please try again.");
-      return;
-    }
-
-    // Use the session from the context
-    FaceCredentialModel credential =
-        getCredentialProvider(context.getSession())
-            .getMostRecentFaceCredential(context.getRealm(), context.getUser());
-    if (credential == null) {
-      handleFailure(context, "No valid face credential found for user. Please try re-enrolling.");
-      return;
-    }
-
     try {
+      MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
+      String imageData = formData.getFirst("imageData");
+
+      logger.info("Face authentication action called for user: {}", context.getUser().getId());
+      logger.info("Image data length: {}, starts with: {}", 
+                  imageData != null ? imageData.length() : "null",
+                  imageData != null && imageData.length() > 100 ? imageData.substring(0, 100) : imageData);
+
+      if (imageData == null || imageData.isEmpty()) {
+        logger.warn("No image data provided for user: {}", context.getUser().getId());
+        handleFailure(context, "No image data provided. Please try again.");
+        return;
+      }
+
+      // Use the session from the context
+      FaceCredentialModel credential =
+          getCredentialProvider(context.getSession())
+              .getMostRecentFaceCredential(context.getRealm(), context.getUser());
+      if (credential == null) {
+        logger.warn("No face credential found for user: {}", context.getUser().getId());
+        handleFailure(context, "No valid face credential found for user. Please try re-enrolling.");
+        return;
+      }
+
+      logger.info("Found face credential for user: {}, classId: {}", context.getUser().getId(), credential.getClassId());
+
       boolean verificationSuccess = performVerification(context, credential, imageData);
       if (verificationSuccess) {
         logger.info("Face verification successful for user: {}", context.getUser().getId());
         context.success();
       } else {
+        logger.warn("Face verification failed for user: {}", context.getUser().getId());
         handleFailure(context, "Face verification failed. Please try again.");
       }
     } catch (BioIdException e) {
@@ -120,6 +151,12 @@ public class FaceAuthenticator implements Authenticator {
           context.getUser().getId(),
           e);
       handleFailure(context, "Face verification service failed: " + e.getMessage());
+    } catch (Exception e) {
+      logger.error(
+          "Unexpected error during face verification for user: {}",
+          context.getUser().getId(),
+          e);
+      handleFailure(context, "An unexpected error occurred. Please try again.");
     }
   }
 
@@ -128,9 +165,70 @@ public class FaceAuthenticator implements Authenticator {
       throws BioIdException {
     logger.info("Performing verification for classId: {}", credential.getClassId());
 
-    // Use the credential provider's verification method which handles protobuf details internally
-    return getCredentialProvider(context.getSession())
-        .verifyFace(context.getRealm(), context.getUser(), imageData);
+    // Check if imageData is JSON (multiple images) or single image
+    if (imageData.startsWith("{")) {
+      // Handle multiple images for active liveness detection
+      return performLivenessVerification(context, credential, imageData);
+    } else {
+      // Handle single image (passive liveness or fallback)
+      return getCredentialProvider(context.getSession())
+          .verifyFace(context.getRealm(), context.getUser(), imageData);
+    }
+  }
+
+  private boolean performLivenessVerification(
+      AuthenticationFlowContext context, FaceCredentialModel credential, String jsonData)
+      throws BioIdException {
+    
+    try {
+      logger.debug("Parsing liveness verification JSON data for user: {}", context.getUser().getId());
+      
+      // Parse the JSON data containing multiple images
+      com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+      com.fasterxml.jackson.databind.JsonNode jsonNode = mapper.readTree(jsonData);
+      
+      com.fasterxml.jackson.databind.JsonNode imagesNode = jsonNode.get("images");
+      String mode = jsonNode.has("mode") ? jsonNode.get("mode").asText() : "active";
+      String challengeDirection = jsonNode.has("challengeDirection") ? jsonNode.get("challengeDirection").asText() : null;
+      
+      logger.info("Liveness verification mode: {}, challengeDirection: {}", mode, challengeDirection);
+      
+      if (imagesNode == null || !imagesNode.isArray()) {
+        logger.error("Invalid liveness data: images node is null or not an array");
+        throw new BioIdException("Invalid image data format");
+      }
+      
+      if (imagesNode.size() < 2) {
+        logger.warn("Insufficient images for liveness verification: {} images provided", imagesNode.size());
+        throw new BioIdException("At least 2 images required for liveness verification");
+      }
+      
+      String firstImage = imagesNode.get(0).asText();
+      String secondImage = imagesNode.get(1).asText();
+      
+      logger.info("Performing {} liveness verification with {} images for user: {}", 
+                  mode, imagesNode.size(), context.getUser().getId());
+      logger.info("First image length: {}, starts with: {}", 
+                  firstImage != null ? firstImage.length() : 0, 
+                  firstImage != null && firstImage.length() > 50 ? firstImage.substring(0, 50) : "null or empty");
+      logger.info("Second image length: {}, starts with: {}", 
+                  secondImage != null ? secondImage.length() : 0, 
+                  secondImage != null && secondImage.length() > 50 ? secondImage.substring(0, 50) : "null or empty");
+      
+      // Use the credential provider's liveness verification method
+      boolean result = getCredentialProvider(context.getSession())
+          .verifyFaceWithLiveness(context.getRealm(), context.getUser(), firstImage, secondImage, mode, challengeDirection);
+          
+      logger.info("Liveness verification result for user {}: {}", context.getUser().getId(), result);
+      return result;
+          
+    } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+      logger.error("Failed to parse JSON liveness verification data for user: {}", context.getUser().getId(), e);
+      throw new BioIdException("Invalid JSON format in liveness verification data: " + e.getMessage());
+    } catch (Exception e) {
+      logger.error("Unexpected error during liveness verification for user: {}", context.getUser().getId(), e);
+      throw new BioIdException("Liveness verification failed: " + e.getMessage());
+    }
   }
 
   /** Handles a failed verification attempt, managing retries and final failure. */
@@ -158,6 +256,10 @@ public class FaceAuthenticator implements Authenticator {
               .createErrorPage(Response.Status.UNAUTHORIZED);
       context.failure(AuthenticationFlowError.INVALID_CREDENTIALS, errorResponse);
     } else {
+      // Get liveness configuration to maintain settings across retries
+      com.bioid.keycloak.client.config.BioIdConfiguration bioIdConfig = 
+          com.bioid.keycloak.client.config.BioIdConfiguration.getInstance();
+      
       // Present the challenge again with an error message
       String userFriendlyMessage = getUserFriendlyErrorMessage(errorMessage);
       Response challenge =
@@ -166,6 +268,10 @@ public class FaceAuthenticator implements Authenticator {
               .setError(userFriendlyMessage)
               .setAttribute("maxRetries", maxRetries)
               .setAttribute("retryCount", retryCount)
+              .setAttribute("livenessActiveEnabled", bioIdConfig.isLivenessActiveEnabled())
+              .setAttribute("livenessChallengeResponseEnabled", bioIdConfig.isLivenessChallengeResponseEnabled())
+              .setAttribute("livenessConfidenceThreshold", bioIdConfig.getLivenessConfidenceThreshold())
+              .setAttribute("livenessChallengeTimeoutSeconds", (int) bioIdConfig.getLivenessChallengeTimeout().toSeconds())
               .createForm("face-authenticate.ftl");
       context.challenge(challenge);
     }

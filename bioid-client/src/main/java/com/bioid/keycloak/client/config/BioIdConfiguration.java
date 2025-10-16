@@ -59,8 +59,6 @@ public class BioIdConfiguration {
   public static final String REGIONAL_FAILOVER_ENABLED = "regional.failoverEnabled";
   public static final String REGIONAL_LATENCY_THRESHOLD_MS = "regional.latencyThresholdMs";
 
-  public static final String LIVENESS_ENABLED = "liveness.enabled";
-  public static final String LIVENESS_PASSIVE_ENABLED = "liveness.passive.enabled";
   public static final String LIVENESS_ACTIVE_ENABLED = "liveness.active.enabled";
   public static final String LIVENESS_CHALLENGE_RESPONSE_ENABLED =
       "liveness.challengeResponse.enabled";
@@ -68,6 +66,12 @@ public class BioIdConfiguration {
   public static final String LIVENESS_MAX_OVERHEAD_MS = "liveness.maxOverheadMs";
   public static final String LIVENESS_ADAPTIVE_MODE = "liveness.adaptiveMode";
   public static final String LIVENESS_FALLBACK_TO_PASSWORD = "liveness.fallbackToPassword";
+  public static final String LIVENESS_CHALLENGE_COUNT = "liveness.challengeCount";
+  public static final String LIVENESS_CHALLENGE_TIMEOUT_SECONDS = "liveness.challengeTimeoutSeconds";
+
+  public static final String DEBUG_IMAGE_STORAGE_ENABLED = "debug.imageStorage.enabled";
+  public static final String DEBUG_IMAGE_STORAGE_PATH = "debug.imageStorage.path";
+  public static final String DEBUG_IMAGE_STORAGE_INCLUDE_METADATA = "debug.imageStorage.includeMetadata";
 
   // Default values
   private static final String DEFAULT_ENDPOINT = "face.bws-eu.bioid.com:443";
@@ -90,14 +94,17 @@ public class BioIdConfiguration {
   private static final boolean DEFAULT_DATA_RESIDENCY_REQUIRED = false;
   private static final boolean DEFAULT_FAILOVER_ENABLED = true;
   private static final int DEFAULT_LATENCY_THRESHOLD_MS = 1000;
-  private static final boolean DEFAULT_LIVENESS_ENABLED = true;
-  private static final boolean DEFAULT_LIVENESS_PASSIVE_ENABLED = true;
-  private static final boolean DEFAULT_LIVENESS_ACTIVE_ENABLED = false;
+  private static final boolean DEFAULT_LIVENESS_ACTIVE_ENABLED = true;
   private static final boolean DEFAULT_LIVENESS_CHALLENGE_RESPONSE_ENABLED = false;
   private static final double DEFAULT_LIVENESS_CONFIDENCE_THRESHOLD = 0.5;
   private static final int DEFAULT_LIVENESS_MAX_OVERHEAD_MS = 200;
   private static final boolean DEFAULT_LIVENESS_ADAPTIVE_MODE = false;
-  private static final boolean DEFAULT_LIVENESS_FALLBACK_TO_PASSWORD = true;
+  private static final boolean DEFAULT_LIVENESS_FALLBACK_TO_PASSWORD = false;
+  private static final int DEFAULT_LIVENESS_CHALLENGE_COUNT = 1;
+  private static final int DEFAULT_LIVENESS_CHALLENGE_TIMEOUT_SECONDS = 30;
+  private static final boolean DEFAULT_DEBUG_IMAGE_STORAGE_ENABLED = false;
+  private static final String DEFAULT_DEBUG_IMAGE_STORAGE_PATH = "./debug-images";
+  private static final boolean DEFAULT_DEBUG_IMAGE_STORAGE_INCLUDE_METADATA = true;
 
   static volatile BioIdConfiguration instance;
   private final Properties properties;
@@ -248,14 +255,18 @@ public class BioIdConfiguration {
     setFromEnv("REGIONAL_FAILOVER_ENABLED", REGIONAL_FAILOVER_ENABLED);
     setFromEnv("REGIONAL_LATENCY_THRESHOLD_MS", REGIONAL_LATENCY_THRESHOLD_MS);
 
-    setFromEnv("LIVENESS_ENABLED", LIVENESS_ENABLED);
-    setFromEnv("LIVENESS_PASSIVE_ENABLED", LIVENESS_PASSIVE_ENABLED);
     setFromEnv("LIVENESS_ACTIVE_ENABLED", LIVENESS_ACTIVE_ENABLED);
     setFromEnv("LIVENESS_CHALLENGE_RESPONSE_ENABLED", LIVENESS_CHALLENGE_RESPONSE_ENABLED);
     setFromEnv("LIVENESS_CONFIDENCE_THRESHOLD", LIVENESS_CONFIDENCE_THRESHOLD);
     setFromEnv("LIVENESS_MAX_OVERHEAD_MS", LIVENESS_MAX_OVERHEAD_MS);
     setFromEnv("LIVENESS_ADAPTIVE_MODE", LIVENESS_ADAPTIVE_MODE);
     setFromEnv("LIVENESS_FALLBACK_TO_PASSWORD", LIVENESS_FALLBACK_TO_PASSWORD);
+    setFromEnv("LIVENESS_CHALLENGE_COUNT", LIVENESS_CHALLENGE_COUNT);
+    setFromEnv("LIVENESS_CHALLENGE_TIMEOUT_SECONDS", LIVENESS_CHALLENGE_TIMEOUT_SECONDS);
+
+    setFromEnv("DEBUG_IMAGE_STORAGE_ENABLED", DEBUG_IMAGE_STORAGE_ENABLED);
+    setFromEnv("DEBUG_IMAGE_STORAGE_PATH", DEBUG_IMAGE_STORAGE_PATH);
+    setFromEnv("DEBUG_IMAGE_STORAGE_INCLUDE_METADATA", DEBUG_IMAGE_STORAGE_INCLUDE_METADATA);
   }
 
   /** Sets property from environment variable if present. */
@@ -480,14 +491,6 @@ public class BioIdConfiguration {
         getIntProperty(REGIONAL_LATENCY_THRESHOLD_MS, DEFAULT_LATENCY_THRESHOLD_MS));
   }
 
-  public boolean isLivenessEnabled() {
-    return getBooleanProperty(LIVENESS_ENABLED, DEFAULT_LIVENESS_ENABLED);
-  }
-
-  public boolean isLivenessPassiveEnabled() {
-    return getBooleanProperty(LIVENESS_PASSIVE_ENABLED, DEFAULT_LIVENESS_PASSIVE_ENABLED);
-  }
-
   public boolean isLivenessActiveEnabled() {
     return getBooleanProperty(LIVENESS_ACTIVE_ENABLED, DEFAULT_LIVENESS_ACTIVE_ENABLED);
   }
@@ -512,6 +515,15 @@ public class BioIdConfiguration {
 
   public boolean isLivenessFallbackToPassword() {
     return getBooleanProperty(LIVENESS_FALLBACK_TO_PASSWORD, DEFAULT_LIVENESS_FALLBACK_TO_PASSWORD);
+  }
+
+  public int getLivenessChallengeCount() {
+    return getIntProperty(LIVENESS_CHALLENGE_COUNT, DEFAULT_LIVENESS_CHALLENGE_COUNT);
+  }
+
+  public Duration getLivenessChallengeTimeout() {
+    return Duration.ofSeconds(
+        getIntProperty(LIVENESS_CHALLENGE_TIMEOUT_SECONDS, DEFAULT_LIVENESS_CHALLENGE_TIMEOUT_SECONDS));
   }
 
   // Helper methods for type conversion
@@ -549,6 +561,14 @@ public class BioIdConfiguration {
     return defaultValue;
   }
 
+  private String getStringProperty(String key, String defaultValue) {
+    String value = properties.getProperty(key);
+    if (value != null && !value.trim().isEmpty()) {
+      return value.trim();
+    }
+    return defaultValue;
+  }
+
   /** Gets a property value for testing purposes. */
   public String getProperty(String key) {
     return properties.getProperty(key);
@@ -557,5 +577,18 @@ public class BioIdConfiguration {
   /** Sets a property value for testing purposes. */
   public void setProperty(String key, String value) {
     properties.setProperty(key, value);
+  }
+
+  // Debug Image Storage Configuration
+  public boolean isDebugImageStorageEnabled() {
+    return getBooleanProperty(DEBUG_IMAGE_STORAGE_ENABLED, DEFAULT_DEBUG_IMAGE_STORAGE_ENABLED);
+  }
+
+  public String getDebugImageStoragePath() {
+    return getStringProperty(DEBUG_IMAGE_STORAGE_PATH, DEFAULT_DEBUG_IMAGE_STORAGE_PATH);
+  }
+
+  public boolean isDebugImageStorageIncludeMetadata() {
+    return getBooleanProperty(DEBUG_IMAGE_STORAGE_INCLUDE_METADATA, DEFAULT_DEBUG_IMAGE_STORAGE_INCLUDE_METADATA);
   }
 }

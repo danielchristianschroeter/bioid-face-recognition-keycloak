@@ -62,6 +62,7 @@
             </div>
         </div>
 
+        <script src="${url.resourcesPath}/js/face-detection.js" nonce="${cspNonce!}"></script>
         <script nonce="${cspNonce!}">
             (function() {
                 const video = document.getElementById('video');
@@ -79,6 +80,8 @@
                 const requiredFrames = ${minRequiredFrames!"3"};
                 let stream;
                 const capturedImages = [];
+                let faceDetector;
+                let qualityCheckInterval;
 
                 const instructions = [
                     "${msg('face-enroll.instruction.first')}",
@@ -87,16 +90,29 @@
                     "${msg('face-enroll.instruction.complete')}"
                 ];
 
+                async function initializeFaceDetection() {
+                    faceDetector = new FaceDetector();
+                    await faceDetector.initialize();
+                    console.log('Face detection ready');
+                }
+
                 async function startCamera() {
                     try {
                         cameraError.style.display = 'none';
-                        stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' } });
+                        stream = await navigator.mediaDevices.getUserMedia({ 
+                            video: { 
+                                width: { ideal: 1280 }, 
+                                height: { ideal: 720 }, 
+                                facingMode: 'user' 
+                            } 
+                        });
                         video.srcObject = stream;
                         video.onloadedmetadata = () => {
                             canvas.width = video.videoWidth;
                             canvas.height = video.videoHeight;
                             captureBtn.disabled = false;
                             updateProgress();
+                            startQualityCheck();
                         };
                     } catch (err) {
                         console.error("Camera error:", err);
@@ -108,6 +124,35 @@
                 function stopCamera() {
                     if (stream) {
                         stream.getTracks().forEach(track => track.stop());
+                    }
+                    if (qualityCheckInterval) {
+                        clearInterval(qualityCheckInterval);
+                    }
+                }
+
+                function startQualityCheck() {
+                    // Check face quality every 500ms
+                    qualityCheckInterval = setInterval(async () => {
+                        if (capturedFrames >= requiredFrames || !faceDetector) return;
+                        
+                        const quality = await faceDetector.checkFaceQuality(video);
+                        updateFaceGuide(quality);
+                    }, 500);
+                }
+
+                function updateFaceGuide(quality) {
+                    const path = faceGuideSvg.querySelector('path');
+                    if (!path) return;
+
+                    if (quality.detected && quality.quality === 'good') {
+                        path.style.stroke = 'rgba(40, 167, 69, 0.9)';
+                        path.style.strokeWidth = '4';
+                    } else if (quality.detected) {
+                        path.style.stroke = 'rgba(255, 193, 7, 0.9)';
+                        path.style.strokeWidth = '4';
+                    } else {
+                        path.style.stroke = 'rgba(255, 255, 255, 0.8)';
+                        path.style.strokeWidth = '3';
                     }
                 }
 
@@ -127,24 +172,87 @@
                         captureBtn.style.display = 'none';
                         submitBtn.style.display = 'block';
                         faceGuideSvg.classList.add('completed');
+                        if (qualityCheckInterval) {
+                            clearInterval(qualityCheckInterval);
+                        }
                     } else {
                         faceGuideSvg.classList.remove('completed');
                     }
                 }
 
-                function captureFrame() {
+                async function captureFrame() {
                     if (capturedFrames >= requiredFrames) return;
                     
-                    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-                    const imageData = canvas.toDataURL('image/jpeg', 0.9);
+                    captureBtn.disabled = true;
+                    captureBtn.textContent = "${msg('face-enroll.button.processing')}";
                     
-                    capturedImages.push(imageData);
-                    // For a simplified flow, we'll just submit the last good image.
-                    // A more advanced implementation would send all images.
-                    imageDataInput.value = imageData; 
-                    
-                    capturedFrames++;
-                    updateProgress();
+                    try {
+                        let imageData;
+                        
+                        // Try to use face detector if available
+                        if (faceDetector && faceDetector.isReady && typeof faceDetector.processImage === 'function') {
+                            try {
+                                imageData = await faceDetector.processImage(video);
+                                if (!imageData || imageData.length < 100) {
+                                    console.warn('Face detector returned invalid image, using fallback');
+                                    imageData = null;
+                                }
+                            } catch (detectorError) {
+                                console.warn('Face detector failed, using fallback:', detectorError);
+                                imageData = null;
+                            }
+                        }
+                        
+                        // Fallback: simple capture without face detection
+                        if (!imageData) {
+                            console.log('Using fallback capture method');
+                            const ctx = canvas.getContext('2d');
+                            
+                            // Ensure canvas is properly sized
+                            if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+                                canvas.width = video.videoWidth;
+                                canvas.height = video.videoHeight;
+                            }
+                            
+                            // Draw the current video frame (un-mirrored for correct orientation)
+                            ctx.save();
+                            ctx.scale(-1, 1);
+                            ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+                            ctx.restore();
+                            
+                            // Convert to base64 JPEG
+                            imageData = canvas.toDataURL('image/jpeg', 0.95);
+                            
+                            if (!imageData || imageData.length < 100) {
+                                throw new Error('Failed to capture image');
+                            }
+                        }
+                        
+                        capturedImages.push(imageData);
+                        
+                        // Store all captured images as JSON array
+                        imageDataInput.value = JSON.stringify(capturedImages);
+                        
+                        console.log('Captured image', capturedFrames + 1, 'of', requiredFrames);
+                        console.log('Total images in array:', capturedImages.length);
+                        console.log('JSON length:', imageDataInput.value.length);
+                        
+                        capturedFrames++;
+                        updateProgress();
+                        
+                        // Re-enable button after short delay
+                        setTimeout(() => {
+                            if (capturedFrames < requiredFrames) {
+                                captureBtn.disabled = false;
+                                captureBtn.textContent = "${msg('face-enroll.button.capture')}";
+                            }
+                        }, 1000);
+                    } catch (error) {
+                        console.error('Capture error:', error);
+                        captureBtn.disabled = false;
+                        captureBtn.textContent = "${msg('face-enroll.button.capture')}";
+                        instructionText.textContent = 'Error capturing image. Please try again.';
+                    }
                 }
 
                 // Prevent double submission
@@ -164,7 +272,9 @@
                 captureBtn.addEventListener('click', captureFrame);
                 cameraRetryBtn.addEventListener('click', startCamera);
                 window.addEventListener('beforeunload', stopCamera);
-                startCamera();
+                
+                // Initialize
+                initializeFaceDetection().then(startCamera);
             })();
         </script>
 
@@ -215,6 +325,8 @@
                 width: 100%;
                 height: 100%;
                 object-fit: cover;
+                /* Mirror video for natural user experience (like looking in a mirror)
+                   Note: Captured images are un-mirrored so head movements match actual direction */
                 transform: scaleX(-1);
             }
             

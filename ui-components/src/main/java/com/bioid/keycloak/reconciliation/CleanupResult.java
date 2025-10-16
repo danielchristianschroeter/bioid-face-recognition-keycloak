@@ -7,6 +7,7 @@ import java.util.List;
 /**
  * Result of an orphaned data cleanup operation
  */
+@SuppressWarnings("auxiliaryclass")
 public class CleanupResult {
     
     private String realmId;

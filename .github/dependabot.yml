@@ -1,0 +1,76 @@
+version: 2
+updates:
+  # Maven dependencies
+  - package-ecosystem: "maven"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "maintainers"
+    assignees:
+      - "maintainers"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    # Group related dependencies
+    groups:
+      keycloak:
+        patterns:
+          - "org.keycloak:*"
+      grpc:
+        patterns:
+          - "io.grpc:*"
+          - "com.google.protobuf:*"
+      security:
+        patterns:
+          - "io.jsonwebtoken:*"
+          - "org.bouncycastle:*"
+      testing:
+        patterns:
+          - "org.junit.jupiter:*"
+          - "org.mockito:*"
+          - "org.assertj:*"
+          - "org.testcontainers:*"
+      jackson:
+        patterns:
+          - "com.fasterxml.jackson.*:*"
+      build-plugins:
+        patterns:
+          - "org.apache.maven.plugins:*"
+          - "org.codehaus.mojo:*"
+    # Ignore pre-release versions for stable dependencies
+    ignore:
+      - dependency-name: "org.keycloak:*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "io.grpc:*"
+        update-types: ["version-update:semver-major"]
+      # Allow security updates even for major versions
+      - dependency-name: "io.jsonwebtoken:*"
+        update-types: []
+      - dependency-name: "org.bouncycastle:*"
+        update-types: []
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+
+  # Docker dependencies
+  - package-ecosystem: "docker"
+    directory: "/docker"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    commit-message:
+      prefix: "docker"
+      include: "scope"

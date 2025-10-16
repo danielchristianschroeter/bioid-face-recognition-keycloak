@@ -221,6 +221,45 @@ readinessProbe:
     port: 8080
   initialDelaySeconds: 30
   periodSeconds: 10
+
+# Administrative health check
+httpGet:
+  path: /admin/realms/master/face-recognition/health
+  port: 8080
+```
+
+### Monitoring Configuration
+
+Configure monitoring and alerting settings:
+
+```properties
+# /opt/keycloak/conf/monitoring.properties
+
+# Health check intervals
+health.check.interval=5m
+health.check.timeout=30s
+
+# Alert thresholds
+alert.error.rate.threshold=0.05
+alert.liveness.success.rate.threshold=0.95
+alert.response.time.threshold=5s
+
+# Alert suppression (prevent spam)
+alert.suppression.duration=15m
+
+# Monitoring intervals
+alert.health.check.interval=2m
+alert.metrics.check.interval=1m
+
+# Log aggregation settings
+log.aggregation.interval=5m
+log.retention.period=30d
+log.buffer.size=10000
+
+# Tracing configuration
+tracing.enabled=true
+tracing.max.trace.duration=1h
+tracing.max.spans.per.trace=1000
 ```
 
 ### Metrics Collection
@@ -230,7 +269,7 @@ readinessProbe:
 ```yaml
 # prometheus.yml
 scrape_configs:
-  - job_name: 'keycloak-face-recognition'
+  - job_name: 'keycloak-bioid-admin'
     static_configs:
       - targets: ['keycloak:8080']
     metrics_path: '/admin/realms/master/face-recognition/metrics'
@@ -240,13 +279,21 @@ scrape_configs:
       password: 'monitoring-password'
 ```
 
-**Key Metrics to Monitor:**
+**Key Administrative Metrics to Monitor:**
 
-- `face_recognition_enroll_success_total`
-- `face_recognition_verify_success_total`
-- `face_recognition_bioid_latency_ms`
-- `face_recognition_health_check_success_total`
-- `face_recognition_deletion_request_pending_total`
+- `bioid.admin.liveness.detection.successes` - Liveness detection success count
+- `bioid.admin.template.upgrades` - Template upgrade operations
+- `bioid.admin.bulk.operations.active` - Active bulk operations gauge
+- `bioid.admin.users.enrolled.total` - Total enrolled users gauge
+- `bioid.admin.health.overall` - Overall system health status
+- `bioid.admin.sessions.active` - Active administrative sessions
+
+**Core BioID Metrics:**
+
+- `bioid.enrollment.successes` - Successful enrollments
+- `bioid.verification.successes` - Successful verifications
+- `bioid.errors.service` - Service error count
+- `bioid.template.deletions` - Template deletion operations
 
 ### Logging Configuration
 
@@ -261,6 +308,10 @@ log-console-format=%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n
 logger.com.bioid.keycloak.level=INFO
 logger.com.bioid.keycloak.client.level=WARN
 logger.com.bioid.keycloak.admin.level=INFO
+logger.com.bioid.keycloak.metrics.level=INFO
+logger.com.bioid.keycloak.alerting.level=INFO
+logger.com.bioid.keycloak.logging.level=INFO
+logger.com.bioid.keycloak.tracing.level=DEBUG
 ```
 
 **Log Aggregation:**
@@ -278,9 +329,11 @@ filebeat.inputs:
 
 ## Security Configuration
 
-### TLS Configuration
+### Enhanced TLS Configuration
 
-**Certificate Management:**
+The extension provides comprehensive TLS security with support for TLS 1.3, mutual TLS, and certificate pinning.
+
+**Basic TLS Configuration:**
 
 ```bash
 # Generate certificate (production should use CA-signed certificates)
@@ -290,6 +343,67 @@ openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -node
 chmod 600 key.pem
 chmod 644 cert.pem
 chown keycloak:keycloak key.pem cert.pem
+```
+
+**Enhanced Security Configuration:**
+
+```properties
+# /opt/keycloak/conf/bioid-security.properties
+
+# Enhanced TLS Configuration
+bioid.tlsEnabled=true
+bioid.mutualTlsEnabled=true
+bioid.keyStorePath=/opt/keycloak/conf/client-keystore.jks
+bioid.keyStorePassword=${CLIENT_KEYSTORE_PASSWORD}
+bioid.trustStorePath=/opt/keycloak/conf/truststore.jks
+bioid.trustStorePassword=${TRUSTSTORE_PASSWORD}
+
+# Certificate Pinning (Optional)
+bioid.certificatePinningEnabled=true
+bioid.pinnedCertificates=sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+
+# Data Encryption
+bioid.encryptionEnabled=true
+bioid.encryptionAlgorithm=AES-256-GCM
+
+# Privacy Protection
+bioid.privacyProtectionEnabled=true
+bioid.gdprComplianceEnabled=true
+bioid.auditLoggingEnabled=true
+
+# Secure Memory Handling
+bioid.secureMemoryEnabled=true
+bioid.memoryCleanupInterval=30s
+bioid.maxMemoryUsage=50MB
+
+# Data Retention Policies
+bioid.templateTtlDays=730
+bioid.auditLogTtlDays=2555
+bioid.sessionTtlMinutes=5
+```
+
+**Mutual TLS Setup:**
+
+```bash
+# Create client keystore for mutual TLS
+keytool -genkeypair -alias bioid-client \
+  -keyalg RSA -keysize 2048 \
+  -keystore /opt/keycloak/conf/client-keystore.jks \
+  -storepass ${CLIENT_KEYSTORE_PASSWORD} \
+  -dname "CN=bioid-client,OU=IT,O=Company,C=US"
+
+# Export client certificate for BioID service
+keytool -exportcert -alias bioid-client \
+  -keystore /opt/keycloak/conf/client-keystore.jks \
+  -file client-cert.pem \
+  -storepass ${CLIENT_KEYSTORE_PASSWORD}
+
+# Create truststore with BioID CA certificate
+keytool -importcert -alias bioid-ca \
+  -keystore /opt/keycloak/conf/truststore.jks \
+  -file bioid-ca-cert.pem \
+  -storepass ${TRUSTSTORE_PASSWORD} \
+  -noprompt
 ```
 
 **Keycloak TLS Configuration:**

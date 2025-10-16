@@ -7,6 +7,7 @@ import java.util.List;
 /**
  * Result of a synchronization operation between Keycloak and BioID
  */
+@SuppressWarnings("auxiliaryclass")
 public class SynchronizationResult {
     
     private String realmId;

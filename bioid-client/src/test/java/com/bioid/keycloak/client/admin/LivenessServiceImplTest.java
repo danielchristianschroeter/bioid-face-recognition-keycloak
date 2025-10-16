@@ -6,7 +6,7 @@ import com.bioid.keycloak.client.admin.model.LivenessTestResult;
 import com.bioid.keycloak.client.exception.BioIdException;
 import com.bioid.keycloak.client.liveness.LivenessDetectionClient;
 import com.bioid.keycloak.client.liveness.LivenessDetectionRequest;
-import com.bioid.keycloak.client.liveness.LivenessDetectionResponse;
+import com.bioid.keycloak.client.liveness.LivenessResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

@@ -1,39 +1,299 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-    <title>Simple OIDC Test</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BioID Face Authentication Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2rem;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1rem;
+        }
+
+        .info-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .info-box strong {
+            color: #856404;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .quick-links {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid #e9ecef;
+        }
+
+        .quick-links h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .link-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .link-card {
+            display: block;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .link-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        .link-card .icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .link-card .title {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        #result {
+            margin-top: 30px;
+        }
+
+        .result-box {
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            color: #155724;
+        }
+
+        .error {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            color: #721c24;
+        }
+
+        .result-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .result-details {
+            font-family: 'Courier New', monospace;
+            background: rgba(0, 0, 0, 0.05);
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            word-break: break-all;
+            font-size: 0.9rem;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-success {
+            background: #28a745;
+            box-shadow: 0 0 8px #28a745;
+        }
+
+        .status-error {
+            background: #dc3545;
+            box-shadow: 0 0 8px #dc3545;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 
 <body>
-    <h1>Simple OIDC Test</h1>
-    <p>Testing basic OIDC flow with PKCE:</p>
+    <div class="container">
+        <h1>🔐 BioID Face Authentication Test</h1>
+        <p class="subtitle">Testing OpenID Connect flow with PKCE and face authentication</p>
+        
+        <div class="info-box">
+            <strong>Quick Guide:</strong> Click "Test Login" to start the authentication flow. 
+            Use "Clear Session" to reset local state, or "Full Logout" to end your Keycloak session.
+        </div>
 
-    <button onclick="testLogin()">Test Login (Force Fresh)</button>
-    <button onclick="logout()"
-        style="margin-left: 10px; background-color: #dc3545; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">Logout
-        First</button>
+        <div id="status-bar" style="padding: 15px; background: #f8f9fa; border-radius: 8px; margin-bottom: 20px; display: none;">
+            <strong>Current Status:</strong> <span id="status-text"></span>
+        </div>
 
-    <h3>Quick Links</h3>
-    <p>Access Keycloak pages directly:</p>
-    <a href="http://localhost:8080/realms/bioid-demo/account" target="_blank" 
-       style="display: inline-block; background-color: #007bff; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; margin: 5px;">Account Management</a>
-    <a href="http://localhost:8080/realms/bioid-demo/account/#/security/signingin" target="_blank"
-       style="display: inline-block; background-color: #28a745; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; margin: 5px;">Face Enrollment</a>
-    <a href="http://localhost:8080/admin/master/console/#/bioid-demo" target="_blank"
-       style="display: inline-block; background-color: #6c757d; color: white; padding: 8px 16px; text-decoration: none; border-radius: 4px; margin: 5px;">Admin Console</a>
+        <div class="button-group">
+            <button onclick="testLogin()" class="btn-primary">
+                <span>🚀</span> Test Login
+            </button>
+            <button onclick="logout()" class="btn-danger">
+                <span>🔄</span> Clear Session
+            </button>
+            <button onclick="fullLogout()" class="btn-secondary">
+                <span>🚪</span> Full Logout
+            </button>
+        </div>
 
-    <div id="result"></div>
+        <div id="result"></div>
+
+        <div class="quick-links">
+            <h3>Quick Access</h3>
+            <div class="link-grid">
+                <a href="http://localhost:8080/realms/bioid-demo/account" target="_blank" class="link-card">
+                    <div class="icon">👤</div>
+                    <div class="title">Account Management</div>
+                </a>
+                <a href="http://localhost:8080/realms/bioid-demo/account/#/security/signingin" target="_blank" class="link-card">
+                    <div class="icon">📸</div>
+                    <div class="title">Face Enrollment</div>
+                </a>
+                <a href="http://localhost:8080/admin/master/console/#/bioid-demo" target="_blank" class="link-card">
+                    <div class="icon">⚙️</div>
+                    <div class="title">Admin Console</div>
+                </a>
+            </div>
+        </div>
+    </div>
 
     <script>
         async function testLogin() {
             try {
+                // Show status
+                showStatus('Generating PKCE parameters...');
+
                 // Generate PKCE parameters
                 const codeVerifier = generateCodeVerifier();
                 const codeChallenge = await generateCodeChallenge(codeVerifier);
 
                 // Store code verifier for later use
                 localStorage.setItem('code_verifier', codeVerifier);
+                localStorage.setItem('auth_started', new Date().toISOString());
 
                 const authUrl = 'http://localhost:8080/realms/bioid-demo/protocol/openid-connect/auth' +
                     '?client_id=bioid-demo-client' +
@@ -44,27 +304,67 @@
                     '&code_challenge_method=S256' +
                     '&prompt=login'; // Force fresh login
 
+                console.log('🔐 Starting authentication flow');
                 console.log('Code Verifier:', codeVerifier);
                 console.log('Code Challenge:', codeChallenge);
                 console.log('Redirecting to:', authUrl);
 
-                window.location.href = authUrl;
+                showStatus('Redirecting to Keycloak...');
+                
+                setTimeout(() => {
+                    window.location.href = authUrl;
+                }, 500);
             } catch (error) {
                 console.error('Error generating PKCE parameters:', error);
-                document.getElementById('result').innerHTML = '<p style="color: red;">❌ Error generating PKCE parameters: ' + error.message + '</p>';
+                document.getElementById('result').innerHTML = `
+                    <div class="result-box error">
+                        <div class="result-title">
+                            <span class="status-indicator status-error"></span>
+                            Error
+                        </div>
+                        <p>Failed to generate PKCE parameters: ${error.message}</p>
+                    </div>
+                `;
             }
+        }
+
+        function showStatus(message) {
+            const statusBar = document.getElementById('status-bar');
+            const statusText = document.getElementById('status-text');
+            statusBar.style.display = 'block';
+            statusText.textContent = message;
         }
 
         function logout() {
             // Clear any local storage
             localStorage.clear();
+            sessionStorage.clear();
 
-            // Redirect to Keycloak logout
-            const logoutUrl = 'http://localhost:8080/realms/bioid-demo/protocol/openid-connect/logout' +
-                '?post_logout_redirect_uri=' + encodeURIComponent('http://localhost:3000/simple-test.html');
+            // Just reload the page (clears local state)
+            console.log('Clearing local session...');
+            window.location.href = window.location.pathname + '?logout=true';
+        }
 
-            console.log('Logging out via:', logoutUrl);
-            window.location.href = logoutUrl;
+        function fullLogout() {
+            // Clear local storage
+            localStorage.clear();
+            sessionStorage.clear();
+
+            // Redirect to Keycloak account logout page
+            // This will end the Keycloak session and redirect back
+            const logoutUrl = 'http://localhost:8080/realms/bioid-demo/account/' +
+                '?referrer=bioid-demo-client' +
+                '&referrer_uri=' + encodeURIComponent(window.location.href);
+
+            console.log('Performing full Keycloak logout...');
+            
+            // Open in new tab so user can logout, then come back
+            window.open(logoutUrl, '_blank');
+            
+            // Also clear this page
+            setTimeout(() => {
+                window.location.href = window.location.pathname + '?logout=true';
+            }, 1000);
         }
 
         // PKCE helper functions
@@ -93,11 +393,79 @@
         const code = urlParams.get('code');
         const error = urlParams.get('error');
         const errorDescription = urlParams.get('error_description');
+        const isLogout = urlParams.get('logout');
 
         if (code) {
-            document.getElementById('result').innerHTML = '<p style="color: green;">✅ Success! Got authorization code: ' + code.substring(0, 20) + '...</p>';
+            document.getElementById('result').innerHTML = `
+                <div class="result-box success">
+                    <div class="result-title">
+                        <span class="status-indicator status-success"></span>
+                        Authentication Successful!
+                    </div>
+                    <p>Successfully authenticated with Keycloak. Authorization code received.</p>
+                    <div class="result-details">
+                        <strong>Authorization Code:</strong><br>
+                        <span id="auth-code">${code}</span>
+                        <button onclick="copyCode()" style="margin-left: 10px; padding: 4px 8px; font-size: 0.8rem; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            Copy
+                        </button>
+                    </div>
+                    <p style="margin-top: 15px; font-size: 0.9rem;">
+                        <strong>What happened:</strong>
+                    </p>
+                    <ul style="margin-left: 20px; font-size: 0.9rem; line-height: 1.6;">
+                        <li>You were redirected to Keycloak</li>
+                        <li>You authenticated (username/password + face)</li>
+                        <li>Keycloak issued an authorization code</li>
+                        <li>You were redirected back here</li>
+                    </ul>
+                    <p style="margin-top: 10px; font-size: 0.9rem;">
+                        <strong>Next steps:</strong> In a real application, this code would be exchanged for access and ID tokens using the token endpoint.
+                    </p>
+                </div>
+            `;
         } else if (error) {
-            document.getElementById('result').innerHTML = '<p style="color: red;">❌ Error: ' + error + '<br>Description: ' + (errorDescription || 'None') + '</p>';
+            document.getElementById('result').innerHTML = `
+                <div class="result-box error">
+                    <div class="result-title">
+                        <span class="status-indicator status-error"></span>
+                        Authentication Failed
+                    </div>
+                    <p><strong>Error:</strong> ${error}</p>
+                    ${errorDescription ? `<p><strong>Description:</strong> ${errorDescription}</p>` : ''}
+                    <p style="margin-top: 15px; font-size: 0.9rem;">
+                        <strong>Troubleshooting:</strong> Check that face authentication is properly configured and your face is enrolled.
+                    </p>
+                </div>
+            `;
+        } else if (isLogout) {
+            document.getElementById('result').innerHTML = `
+                <div class="result-box" style="background: #e7f3ff; border-left: 4px solid #0066cc; color: #004085;">
+                    <div class="result-title">
+                        <span style="font-size: 1.5rem;">ℹ️</span>
+                        Session Cleared
+                    </div>
+                    <p>Local session has been cleared. Click "Test Login" to authenticate again.</p>
+                </div>
+            `;
+        }
+
+        // Helper function to copy authorization code
+        function copyCode() {
+            const code = document.getElementById('auth-code').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                btn.style.background = '#28a745';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '#667eea';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                alert('Failed to copy to clipboard');
+            });
         }
     </script>
 </body>
