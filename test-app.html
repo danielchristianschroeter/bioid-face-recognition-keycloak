@@ -282,6 +282,19 @@
         const CLIENT_ID = 'bioid-demo-client';
         const REDIRECT_URI = window.location.origin + window.location.pathname;
 
+        // Security: HTML escaping function to prevent XSS
+        function escapeHtml(unsafe) {
+            if (unsafe === null || unsafe === undefined) {
+                return '';
+            }
+            return String(unsafe)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
         // Check for authentication result on page load
         window.onload = function() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -451,12 +464,13 @@
             document.getElementById('errorSection').style.display = 'none';
             document.getElementById('userSection').style.display = 'block';
 
+            // Security: Escape all user-controlled data to prevent XSS
             const userInfoDiv = document.getElementById('userInfo');
             userInfoDiv.innerHTML = `
-                <p><strong>Username:</strong> ${userInfo.preferred_username || 'N/A'}</p>
-                <p><strong>Email:</strong> ${userInfo.email || 'N/A'}</p>
-                <p><strong>Name:</strong> ${userInfo.given_name || ''} ${userInfo.family_name || ''}</p>
-                <p><strong>User ID:</strong> ${userInfo.sub || 'N/A'}</p>
+                <p><strong>Username:</strong> ${escapeHtml(userInfo.preferred_username || 'N/A')}</p>
+                <p><strong>Email:</strong> ${escapeHtml(userInfo.email || 'N/A')}</p>
+                <p><strong>Name:</strong> ${escapeHtml(userInfo.given_name || '')} ${escapeHtml(userInfo.family_name || '')}</p>
+                <p><strong>User ID:</strong> ${escapeHtml(userInfo.sub || 'N/A')}</p>
                 <p><strong>Email Verified:</strong> ${userInfo.email_verified ? '✅ Yes' : '❌ No'}</p>
             `;
 
@@ -469,11 +483,12 @@
                 const expTime = tokenPayload.exp ? new Date(tokenPayload.exp * 1000).toLocaleString() : 'N/A';
                 const acr = tokenPayload.acr || 'N/A';
                 
+                // Security: Escape token data to prevent XSS
                 credentialDetailsDiv.innerHTML = `
                     <p style="color: #0c5460; margin-top: 10px;"><strong>Authentication Details:</strong></p>
-                    <p style="color: #0c5460;"><strong>Authenticated At:</strong> ${authTime}</p>
-                    <p style="color: #0c5460;"><strong>Token Expires:</strong> ${expTime}</p>
-                    <p style="color: #0c5460;"><strong>Authentication Context:</strong> ${acr}</p>
+                    <p style="color: #0c5460;"><strong>Authenticated At:</strong> ${escapeHtml(authTime)}</p>
+                    <p style="color: #0c5460;"><strong>Token Expires:</strong> ${escapeHtml(expTime)}</p>
+                    <p style="color: #0c5460;"><strong>Authentication Context:</strong> ${escapeHtml(acr)}</p>
                 `;
                 
                 // Show token for debugging
@@ -522,15 +537,15 @@
                     return;
                 }
 
-                // Display template status
+                // Display template status (Security: Escape all user data)
                 let html = `
                     <div style="background: #d4edda; padding: 15px; border-radius: 5px; margin-top: 10px;">
                         <p style="color: #155724; margin: 5px 0;"><strong>✅ Template Status:</strong> Enrolled</p>
-                        <p style="color: #155724; margin: 5px 0;"><strong>Class ID:</strong> ${status.classId}</p>
-                        <p style="color: #155724; margin: 5px 0;"><strong>Enrolled At:</strong> ${status.enrolledAt ? new Date(status.enrolledAt).toLocaleString() : 'N/A'}</p>
-                        <p style="color: #155724; margin: 5px 0;"><strong>Encoder Version:</strong> ${status.encoderVersion || 'N/A'}</p>
-                        <p style="color: #155724; margin: 5px 0;"><strong>Feature Vectors:</strong> ${status.featureVectors || 0}</p>
-                        <p style="color: #155724; margin: 5px 0;"><strong>Thumbnails Stored:</strong> ${status.thumbnailsStored || 0}</p>
+                        <p style="color: #155724; margin: 5px 0;"><strong>Class ID:</strong> ${escapeHtml(status.classId)}</p>
+                        <p style="color: #155724; margin: 5px 0;"><strong>Enrolled At:</strong> ${escapeHtml(status.enrolledAt ? new Date(status.enrolledAt).toLocaleString() : 'N/A')}</p>
+                        <p style="color: #155724; margin: 5px 0;"><strong>Encoder Version:</strong> ${escapeHtml(status.encoderVersion || 'N/A')}</p>
+                        <p style="color: #155724; margin: 5px 0;"><strong>Feature Vectors:</strong> ${escapeHtml(status.featureVectors || 0)}</p>
+                        <p style="color: #155724; margin: 5px 0;"><strong>Thumbnails Stored:</strong> ${escapeHtml(status.thumbnailsStored || 0)}</p>
                     </div>
                 `;
 
@@ -543,12 +558,13 @@
                     `;
                     
                     status.thumbnails.forEach((thumb, index) => {
+                        // Security: Escape image URL and date to prevent XSS
                         html += `
                             <div style="text-align: center;">
-                                <img src="${thumb.image}" alt="Enrolled face ${index + 1}" 
+                                <img src="${escapeHtml(thumb.image)}" alt="Enrolled face ${index + 1}" 
                                      style="width: 150px; height: 150px; object-fit: cover; border-radius: 8px; border: 2px solid #0066cc;">
                                 <p style="font-size: 0.8rem; color: #666; margin-top: 5px;">
-                                    ${thumb.enrolledAt ? new Date(thumb.enrolledAt).toLocaleDateString() : 'N/A'}
+                                    ${escapeHtml(thumb.enrolledAt ? new Date(thumb.enrolledAt).toLocaleDateString() : 'N/A')}
                                 </p>
                             </div>
                         `;
@@ -564,9 +580,10 @@
 
             } catch (error) {
                 console.error('Failed to load template status:', error);
+                // Security: Escape error message to prevent XSS
                 enrolledImagesDiv.innerHTML = `
                     <p style="color: #721c24; background: #f8d7da; padding: 10px; border-radius: 5px;">
-                        ⚠️ Failed to load template status: ${error.message}
+                        ⚠️ Failed to load template status: ${escapeHtml(error.message)}
                     </p>
                 `;
             }
@@ -578,6 +595,7 @@
             document.getElementById('userSection').style.display = 'none';
             document.getElementById('errorSection').style.display = 'block';
             document.getElementById('tokenSection').style.display = 'none';
+            // Security: Use textContent instead of innerHTML to prevent XSS
             document.getElementById('errorInfo').textContent = message;
         }
 

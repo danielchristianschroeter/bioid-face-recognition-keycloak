@@ -24,6 +24,31 @@
         <cve>CVE-2023-33953</cve>
     </suppress>
     
+    <suppress>
+        <notes><![CDATA[
+        CVE-2024-7246: gRPC-Java HTTP/2 Denial of Service vulnerability.
+        This CVE affects gRPC servers that accept HTTP/2 connections from untrusted clients.
+        Our usage: We are a gRPC CLIENT connecting to BioID's trusted BWS service.
+        We do not run a gRPC server, so this server-side DoS vulnerability does not apply.
+        Mitigation: Not applicable - we are not a server.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.grpc/grpc-netty.*$</packageUrl>
+        <cve>CVE-2024-7246</cve>
+    </suppress>
+    
+    <suppress>
+        <notes><![CDATA[
+        CVE-2024-11407: gRPC-Java HTTP/2 CONTINUATION Flood vulnerability.
+        This CVE affects gRPC servers exposed to untrusted clients.
+        Our usage: We are a gRPC CLIENT connecting to BioID's trusted BWS service.
+        We do not run a gRPC server, so this server-side vulnerability does not apply.
+        Mitigation: Not applicable - we are not a server.
+        CVSS: 6.9 (Medium) - Below our threshold of 7.0, but suppressing for clarity.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.grpc/grpc-netty.*$</packageUrl>
+        <cve>CVE-2024-11407</cve>
+    </suppress>
+    
     <!-- Suppress Netty-related false positives -->
     <suppress>
         <notes><![CDATA[
@@ -57,39 +82,12 @@
     </suppress>
     
     <!-- Suppress test-only dependencies -->
-    <suppress>
-        <notes><![CDATA[
-        Test dependencies are not included in production builds and don't pose
-        runtime security risks.
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.junit\.jupiter/.*$</packageUrl>
-        <cve>.*</cve>
-    </suppress>
-    
-    <suppress>
-        <notes><![CDATA[
-        Mockito is a test-only dependency and doesn't pose runtime security risks.
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.mockito/.*$</packageUrl>
-        <cve>.*</cve>
-    </suppress>
-    
-    <suppress>
-        <notes><![CDATA[
-        TestContainers is a test-only dependency and doesn't pose runtime security risks.
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.testcontainers/.*$</packageUrl>
-        <cve>.*</cve>
-    </suppress>
+    <!-- Note: Test dependencies are not included in production builds.
+         Specific CVEs should be added here as needed rather than using wildcards. -->
     
     <!-- Suppress build-time only dependencies -->
-    <suppress>
-        <notes><![CDATA[
-        Maven plugins and build-time dependencies don't pose runtime security risks.
-        ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.maven\.plugins/.*$</packageUrl>
-        <cve>.*</cve>
-    </suppress>
+    <!-- Note: Maven plugins and build-time dependencies don't pose runtime security risks.
+         Specific CVEs should be added here as needed rather than using wildcards. -->
     
     <!-- Suppress specific false positives by filename -->
     <suppress>
@@ -98,6 +96,53 @@
         ]]></notes>
         <filePath regex="true">.*\.jar</filePath>
         <cve>CVE-2020-8908</cve>
+    </suppress>
+    
+    <!-- Suppress false positives for our own internal modules -->
+    <suppress>
+        <notes><![CDATA[
+        False positive: Our internal bioid-client module is being incorrectly matched
+        against Keycloak CVEs. These CVEs apply to Keycloak server, not our extension.
+        Our module name contains "keycloak" but is not the vulnerable Keycloak component.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.bioid\.keycloak/.*$</packageUrl>
+        <cve>CVE-2014-3651</cve>
+        <cve>CVE-2014-3709</cve>
+        <cve>CVE-2017-12161</cve>
+    </suppress>
+    
+    <!-- Suppress false positives where CPE incorrectly identifies our modules -->
+    <suppress>
+        <notes><![CDATA[
+        False positive: Dependency-check is incorrectly creating a CPE for our internal
+        modules that matches Keycloak server vulnerabilities. Our extension modules are
+        not the vulnerable Keycloak server components.
+        ]]></notes>
+        <cpe>cpe:/a:keycloak:keycloak:1.0.0</cpe>
+        <cve>CVE-2014-3651</cve>
+        <cve>CVE-2014-3709</cve>
+        <cve>CVE-2017-12161</cve>
+    </suppress>
+    
+    <suppress>
+        <notes><![CDATA[
+        False positive: CVE-2024-45394 affects "Authenticator" (a different product).
+        Our face-authenticator module is being incorrectly matched due to the name.
+        CVE-2024-45394 is for: https://github.com/nextauthjs/next-auth (NextAuth.js)
+        Our module: Keycloak face authentication extension (Java, not JavaScript)
+        These are completely different products.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.bioid\.keycloak/face-authenticator.*$</packageUrl>
+        <cve>CVE-2024-45394</cve>
+    </suppress>
+    
+    <suppress>
+        <notes><![CDATA[
+        False positive: Our face-authenticator module is being matched against
+        generic "authenticator" CPE. This is not the vulnerable component.
+        ]]></notes>
+        <cpe>cpe:/a:authenticator:authenticator:1.0.0</cpe>
+        <cve>CVE-2024-45394</cve>
     </suppress>
     
 </suppressions>

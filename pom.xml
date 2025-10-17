@@ -328,6 +328,12 @@
             <suppressionFiles>
               <suppressionFile>owasp-suppressions.xml</suppressionFile>
             </suppressionFiles>
+            <!-- Disable analyzers not relevant for Java projects -->
+            <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
+            <nuspecAnalyzerEnabled>false</nuspecAnalyzerEnabled>
+            <nugetconfAnalyzerEnabled>false</nugetconfAnalyzerEnabled>
+            <nodeAnalyzerEnabled>false</nodeAnalyzerEnabled>
+            <retireJsAnalyzerEnabled>false</retireJsAnalyzerEnabled>
           </configuration>
         </plugin>
 

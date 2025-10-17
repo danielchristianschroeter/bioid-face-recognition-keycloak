@@ -282,6 +282,19 @@
     </div>
 
     <script>
+        // Security: HTML escaping function to prevent XSS
+        function escapeHtml(unsafe) {
+            if (unsafe === null || unsafe === undefined) {
+                return '';
+            }
+            return String(unsafe)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
         async function testLogin() {
             try {
                 // Show status
@@ -316,13 +329,14 @@
                 }, 500);
             } catch (error) {
                 console.error('Error generating PKCE parameters:', error);
+                // Security: Escape error message to prevent XSS
                 document.getElementById('result').innerHTML = `
                     <div class="result-box error">
                         <div class="result-title">
                             <span class="status-indicator status-error"></span>
                             Error
                         </div>
-                        <p>Failed to generate PKCE parameters: ${error.message}</p>
+                        <p>Failed to generate PKCE parameters: ${escapeHtml(error.message)}</p>
                     </div>
                 `;
             }
@@ -396,6 +410,7 @@
         const isLogout = urlParams.get('logout');
 
         if (code) {
+            // Security: Escape authorization code to prevent XSS
             document.getElementById('result').innerHTML = `
                 <div class="result-box success">
                     <div class="result-title">
@@ -405,7 +420,7 @@
                     <p>Successfully authenticated with Keycloak. Authorization code received.</p>
                     <div class="result-details">
                         <strong>Authorization Code:</strong><br>
-                        <span id="auth-code">${code}</span>
+                        <span id="auth-code">${escapeHtml(code)}</span>
                         <button onclick="copyCode()" style="margin-left: 10px; padding: 4px 8px; font-size: 0.8rem; background: #667eea; color: white; border: none; border-radius: 4px; cursor: pointer;">
                             Copy
                         </button>
@@ -425,14 +440,15 @@
                 </div>
             `;
         } else if (error) {
+            // Security: Escape error messages to prevent XSS
             document.getElementById('result').innerHTML = `
                 <div class="result-box error">
                     <div class="result-title">
                         <span class="status-indicator status-error"></span>
                         Authentication Failed
                     </div>
-                    <p><strong>Error:</strong> ${error}</p>
-                    ${errorDescription ? `<p><strong>Description:</strong> ${errorDescription}</p>` : ''}
+                    <p><strong>Error:</strong> ${escapeHtml(error)}</p>
+                    ${errorDescription ? `<p><strong>Description:</strong> ${escapeHtml(errorDescription)}</p>` : ''}
                     <p style="margin-top: 15px; font-size: 0.9rem;">
                         <strong>Troubleshooting:</strong> Check that face authentication is properly configured and your face is enrolled.
                     </p>
