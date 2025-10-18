@@ -1,12 +1,9 @@
 package com.bioid.keycloak.credential;
 
 import com.bioid.keycloak.client.BioIdClient;
-import com.bioid.keycloak.client.BioIdGrpcClientProduction;
-import com.bioid.keycloak.client.config.BioIdConfiguration;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
@@ -50,11 +47,12 @@ public class FaceCredentialProvider
 
   private final KeycloakSession session;
   private final ObjectMapper objectMapper;
-  private BioIdClient bioIdClient; // Made non-final
+  private final BioIdClient bioIdClient; // Now final and injected
 
-  public FaceCredentialProvider(KeycloakSession session) {
+  public FaceCredentialProvider(KeycloakSession session, BioIdClient bioIdClient) {
     System.out.println("DEBUG: FaceCredentialProvider constructor called with session: " + session);
     this.session = Objects.requireNonNull(session, "KeycloakSession cannot be null");
+    this.bioIdClient = bioIdClient; // Injected from factory
     this.objectMapper = new ObjectMapper();
     this.objectMapper.registerModule(new JavaTimeModule());
     // Configure ObjectMapper for security
@@ -62,51 +60,10 @@ public class FaceCredentialProvider
         com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
     this.objectMapper.configure(
         com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, true);
-
-    // Lazily initialize the BioID gRPC client
-    // This avoids issues with provider instantiation order during Keycloak startup
-    this.bioIdClient = null;
     System.out.println("DEBUG: FaceCredentialProvider constructor completed successfully");
   }
 
   public BioIdClient getBioIdClient() {
-    if (this.bioIdClient == null) {
-      try {
-        BioIdConfiguration configAdapter = BioIdConfiguration.getInstance();
-
-        // Check if credentials are available
-        if (configAdapter.getClientId() == null || configAdapter.getClientId().trim().isEmpty()
-            || configAdapter.getKey() == null || configAdapter.getKey().trim().isEmpty()) {
-          logger.error(
-              "PRODUCTION ISSUE: BioID credentials not configured. Set BWS_CLIENT_ID and BWS_KEY environment variables. "
-                  + "System will use mock implementations which are NOT suitable for production use.");
-          return null; // Return null to trigger mock fallback
-        }
-
-        // Validate endpoint configuration
-        String endpoint = configAdapter.getEndpoint();
-        if (endpoint == null || endpoint.trim().isEmpty()) {
-          logger.error(
-              "PRODUCTION ISSUE: BioID endpoint not configured. Set BWS_ENDPOINT environment variable.");
-          return null;
-        }
-
-        // Initialize the BioID gRPC client with proper configuration
-        logger.info("Initializing BioID gRPC client with endpoint: {}", endpoint);
-
-        // Create the production BWS gRPC client (uses proper gRPC protocol)
-        this.bioIdClient = new com.bioid.keycloak.client.BioIdGrpcClientProduction(configAdapter,
-            endpoint, configAdapter.getClientId(), configAdapter.getKey());
-
-        logger.info("BioID gRPC client initialized successfully with endpoint: {}", endpoint);
-      } catch (Exception e) {
-        logger.error(
-            "PRODUCTION ISSUE: Failed to initialize BioID client. Check configuration and network connectivity. "
-                + "Error: {} - System will use mock implementations which are NOT suitable for production use.",
-            e.getMessage());
-        return null; // Return null to trigger mock fallback
-      }
-    }
     return this.bioIdClient;
   }
 
@@ -790,6 +747,7 @@ public class FaceCredentialProvider
 
   @Override
   public void close() {
-    // No resources to close
+    // No resources to close - gRPC client is managed by the factory
+    // The shared client will be closed when the factory is closed
   }
 }

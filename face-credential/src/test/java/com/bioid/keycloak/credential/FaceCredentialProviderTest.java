@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import com.bioid.keycloak.client.BioIdClient;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -27,39 +28,38 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class FaceCredentialProviderTest {
 
-  @Mock private KeycloakSession session;
+  @Mock
+  private KeycloakSession session;
 
-  @Mock private RealmModel realm;
+  @Mock
+  private RealmModel realm;
 
-  @Mock private UserModel user;
+  @Mock
+  private UserModel user;
 
-  @Mock private SubjectCredentialManager credentialManager;
+  @Mock
+  private SubjectCredentialManager credentialManager;
+
+  @Mock
+  private BioIdClient bioIdClient;
 
   private FaceCredentialProvider provider;
   private FaceCredentialModel testCredential;
 
   @BeforeEach
   void setUp() {
-    provider = new FaceCredentialProvider(session);
+    provider = new FaceCredentialProvider(session, bioIdClient);
 
     lenient().when(user.credentialManager()).thenReturn(credentialManager);
     lenient().when(user.getId()).thenReturn("test-user-id");
     lenient().when(realm.getName()).thenReturn("test-realm");
 
     // Create test credential model
-    testCredential =
-        FaceCredentialModel.createFaceCredential(
-            123456789L,
-            3,
-            5,
-            3,
-            3,
-            Instant.now().plus(730, ChronoUnit.DAYS),
-            List.of("employee", "high-security"),
-            FaceCredentialModel.TemplateType.STANDARD,
-            "NEW_TEMPLATE_CREATED",
-            new FaceCredentialModel.EnrollmentMetadata(
-                "Chrome/120.0", "192.168.1.100", "device-fingerprint-hash", "bws-job-id-123"));
+    testCredential = FaceCredentialModel.createFaceCredential(123456789L, 3, 5, 3, 3,
+        Instant.now().plus(730, ChronoUnit.DAYS), List.of("employee", "high-security"),
+        FaceCredentialModel.TemplateType.STANDARD, "NEW_TEMPLATE_CREATED",
+        new FaceCredentialModel.EnrollmentMetadata("Chrome/120.0", "192.168.1.100",
+            "device-fingerprint-hash", "bws-job-id-123"));
   }
 
   @Test
@@ -81,16 +81,13 @@ class FaceCredentialProviderTest {
 
     // Then
     assertThat(result).isNotNull();
-    verify(credentialManager)
-        .createStoredCredential(
-            argThat(
-                credential -> {
-                  assertThat(credential.getType()).isEqualTo("face-biometric");
-                  assertThat(credential.getUserLabel()).contains("Face Recognition");
-                  assertThat(credential.getCredentialData()).isNotEmpty();
-                  assertThat(credential.getSecretData()).isNotEmpty();
-                  return true;
-                }));
+    verify(credentialManager).createStoredCredential(argThat(credential -> {
+      assertThat(credential.getType()).isEqualTo("face-biometric");
+      assertThat(credential.getUserLabel()).contains("Face Recognition");
+      assertThat(credential.getCredentialData()).isNotEmpty();
+      assertThat(credential.getSecretData()).isNotEmpty();
+      return true;
+    }));
   }
 
   @Test
@@ -111,12 +108,12 @@ class FaceCredentialProviderTest {
     when(credentialManager.getStoredCredentialById(credentialId)).thenReturn(credential);
     when(credentialManager.removeStoredCredentialById(credentialId)).thenReturn(true);
 
-    // Mock the BioID client to return null (simulating test environment)
-    FaceCredentialProvider spyProvider = spy(provider);
-    doReturn(null).when(spyProvider).getBioIdClient();
+    // Unit test: Pass null BioIdClient to test credential deletion logic in isolation
+    // In production, the factory injects the real gRPC client
+    FaceCredentialProvider testProvider = new FaceCredentialProvider(session, null);
 
     // When
-    boolean result = spyProvider.deleteCredential(realm, user, credentialId);
+    boolean result = testProvider.deleteCredential(realm, user, credentialId);
 
     // Then
     assertThat(result).isTrue();
@@ -221,29 +218,11 @@ class FaceCredentialProviderTest {
     // Given
     Instant now = Instant.now();
     FaceCredentialModel olderCredential =
-        FaceCredentialModel.createFaceCredential(
-            111L,
-            3,
-            5,
-            3,
-            3,
-            now.plus(730, ChronoUnit.DAYS),
-            List.of(),
-            FaceCredentialModel.TemplateType.STANDARD,
-            "NEW_TEMPLATE_CREATED",
-            null);
+        FaceCredentialModel.createFaceCredential(111L, 3, 5, 3, 3, now.plus(730, ChronoUnit.DAYS),
+            List.of(), FaceCredentialModel.TemplateType.STANDARD, "NEW_TEMPLATE_CREATED", null);
     FaceCredentialModel newerCredential =
-        FaceCredentialModel.createFaceCredential(
-            222L,
-            3,
-            5,
-            3,
-            3,
-            now.plus(730, ChronoUnit.DAYS),
-            List.of(),
-            FaceCredentialModel.TemplateType.STANDARD,
-            "NEW_TEMPLATE_CREATED",
-            null);
+        FaceCredentialModel.createFaceCredential(222L, 3, 5, 3, 3, now.plus(730, ChronoUnit.DAYS),
+            List.of(), FaceCredentialModel.TemplateType.STANDARD, "NEW_TEMPLATE_CREATED", null);
 
     CredentialModel cred1 = createMockCredentialModel("cred-1", olderCredential);
     cred1.setCreatedDate(now.toEpochMilli()); // Older
@@ -291,18 +270,9 @@ class FaceCredentialProviderTest {
   @DisplayName("Should return false when user has no valid face credentials")
   void shouldReturnFalseWhenUserHasNoValidFaceCredentials() {
     // Given - expired credential
-    FaceCredentialModel expiredCredential =
-        FaceCredentialModel.createFaceCredential(
-            123L,
-            3,
-            5,
-            3,
-            3,
-            Instant.now().minus(1, ChronoUnit.HOURS), // Expired
-            List.of(),
-            FaceCredentialModel.TemplateType.STANDARD,
-            "NEW_TEMPLATE_CREATED",
-            null);
+    FaceCredentialModel expiredCredential = FaceCredentialModel.createFaceCredential(123L, 3, 5, 3,
+        3, Instant.now().minus(1, ChronoUnit.HOURS), // Expired
+        List.of(), FaceCredentialModel.TemplateType.STANDARD, "NEW_TEMPLATE_CREATED", null);
 
     CredentialModel credential = createMockCredentialModel("cred-1", expiredCredential);
     when(credentialManager.getStoredCredentialsStream()).thenReturn(Stream.of(credential));
@@ -329,36 +299,20 @@ class FaceCredentialProviderTest {
 
     // Then
     assertThat(result).isTrue();
-    verify(credentialManager)
-        .updateStoredCredential(
-            argThat(
-                cred -> {
-                  FaceCredentialModel updated = provider.getCredentialFromModel(cred);
-                  return updated != null
-                      && updated.getExpiresAt() != null
-                      && Math.abs(
-                              updated.getExpiresAt().getEpochSecond()
-                                  - newExpiration.getEpochSecond())
-                          <= 1;
-                }));
+    verify(credentialManager).updateStoredCredential(argThat(cred -> {
+      FaceCredentialModel updated = provider.getCredentialFromModel(cred);
+      return updated != null && updated.getExpiresAt() != null && Math
+          .abs(updated.getExpiresAt().getEpochSecond() - newExpiration.getEpochSecond()) <= 1;
+    }));
   }
 
   @Test
   @DisplayName("Should remove expired credentials")
   void shouldRemoveExpiredCredentials() {
     // Given
-    FaceCredentialModel expiredCredential =
-        FaceCredentialModel.createFaceCredential(
-            123L,
-            3,
-            5,
-            3,
-            3,
-            Instant.now().minus(1, ChronoUnit.HOURS), // Expired
-            List.of(),
-            FaceCredentialModel.TemplateType.STANDARD,
-            "NEW_TEMPLATE_CREATED",
-            null);
+    FaceCredentialModel expiredCredential = FaceCredentialModel.createFaceCredential(123L, 3, 5, 3,
+        3, Instant.now().minus(1, ChronoUnit.HOURS), // Expired
+        List.of(), FaceCredentialModel.TemplateType.STANDARD, "NEW_TEMPLATE_CREATED", null);
 
     CredentialModel validCredential = createMockCredentialModel("valid-cred", testCredential);
     CredentialModel expiredCredentialModel =
@@ -419,12 +373,10 @@ class FaceCredentialProviderTest {
       CredentialModel credential = new CredentialModel();
       credential.setId(id);
       credential.setType("face-biometric");
-      credential.setCredentialData(
-          org.keycloak.util.JsonSerialization.writeValueAsString(
-              faceCredential.getFaceCredentialData()));
-      credential.setSecretData(
-          org.keycloak.util.JsonSerialization.writeValueAsString(
-              faceCredential.getFaceSecretData()));
+      credential.setCredentialData(org.keycloak.util.JsonSerialization
+          .writeValueAsString(faceCredential.getFaceCredentialData()));
+      credential.setSecretData(org.keycloak.util.JsonSerialization
+          .writeValueAsString(faceCredential.getFaceSecretData()));
       credential.setCreatedDate(faceCredential.getCreatedAt().toEpochMilli());
 
       return credential;
