@@ -154,8 +154,11 @@ public class FaceRecognitionHealthCheck {
   private String getConnectionPoolStatus() {
     try {
       if (bioIdClient != null) {
-        // For now, return a simple status since the method doesn't exist yet
-        return "healthy";
+        // Get real connection pool metrics from the client
+        Object poolMetrics = bioIdClient.getConnectionPoolMetrics();
+        if (poolMetrics != null) {
+          return "healthy";
+        }
       }
       return "unknown";
     } catch (Exception e) {
@@ -191,9 +194,21 @@ public class FaceRecognitionHealthCheck {
       // Get connection pool metrics
       if (bioIdClient != null) {
         try {
-          // For now, create dummy metrics since the method doesn't exist yet
-          ConnectionPoolMetrics poolMetrics = new ConnectionPoolMetrics(5, 3, 8, 1000L, 5L);
-          builder.connectionPoolMetrics(poolMetrics);
+          // Get real connection pool metrics from the client
+          Object clientMetrics = bioIdClient.getConnectionPoolMetrics();
+          if (clientMetrics != null) {
+            // Use reflection to extract metrics from the client's ConnectionPoolMetrics object
+            Class<?> metricsClass = clientMetrics.getClass();
+            int active = (int) metricsClass.getMethod("getActiveConnections").invoke(clientMetrics);
+            int idle = (int) metricsClass.getMethod("getIdleConnections").invoke(clientMetrics);
+            int total = (int) metricsClass.getMethod("getTotalConnections").invoke(clientMetrics);
+            long totalReqs = (long) metricsClass.getMethod("getTotalRequests").invoke(clientMetrics);
+            long failedReqs = (long) metricsClass.getMethod("getFailedRequests").invoke(clientMetrics);
+            
+            ConnectionPoolMetrics poolMetrics = new ConnectionPoolMetrics(
+                active, idle, total, totalReqs, failedReqs);
+            builder.connectionPoolMetrics(poolMetrics);
+          }
         } catch (Exception e) {
           builder.connectionPoolError(e.getMessage());
         }

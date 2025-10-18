@@ -49,6 +49,12 @@ public class BioIdConnectionManager implements AutoCloseable {
   private final AtomicBoolean healthy = new AtomicBoolean(true);
   private final AtomicReference<String> currentEndpoint;
 
+  // Connection pool metrics tracking
+  private final AtomicInteger activeConnections = new AtomicInteger(0);
+  private final AtomicInteger idleConnections = new AtomicInteger(0);
+  private final AtomicInteger totalRequests = new AtomicInteger(0);
+  private final AtomicInteger failedRequests = new AtomicInteger(0);
+
   // Metrics
   private final Counter connectionAttempts;
   private final Counter connectionFailures;
@@ -121,6 +127,9 @@ public class BioIdConnectionManager implements AutoCloseable {
    * @throws BioIdServiceException if no healthy channels available
    */
   public ManagedChannel getChannel() throws BioIdServiceException {
+    // Track request
+    totalRequests.incrementAndGet();
+    
     // Check circuit breaker state
     CircuitBreakerState state = circuitState.get();
 
@@ -130,6 +139,7 @@ public class BioIdConnectionManager implements AutoCloseable {
           circuitState.compareAndSet(CircuitBreakerState.OPEN, CircuitBreakerState.HALF_OPEN);
           logger.info("Circuit breaker transitioning to HALF_OPEN state");
         } else {
+          failedRequests.incrementAndGet();
           throw new BioIdServiceException("Circuit breaker is OPEN - service unavailable");
         }
         break;
@@ -145,6 +155,7 @@ public class BioIdConnectionManager implements AutoCloseable {
     }
 
     if (!healthy.get()) {
+      failedRequests.incrementAndGet();
       throw new BioIdServiceException("No healthy BioID endpoints available");
     }
 
@@ -164,11 +175,17 @@ public class BioIdConnectionManager implements AutoCloseable {
       channel = channels[index];
     }
 
+    // Mark connection as active
+    activeConnections.incrementAndGet();
+
     return channel;
   }
 
   /** Records a successful operation, potentially resetting circuit breaker. */
   public void recordSuccess() {
+    // Release active connection
+    activeConnections.decrementAndGet();
+    
     CircuitBreakerState state = circuitState.get();
 
     if (state == CircuitBreakerState.HALF_OPEN) {
@@ -184,6 +201,9 @@ public class BioIdConnectionManager implements AutoCloseable {
 
   /** Records a failure, potentially tripping circuit breaker. */
   public void recordFailure() {
+    // Release active connection and track failure
+    activeConnections.decrementAndGet();
+    failedRequests.incrementAndGet();
     connectionFailures.increment();
     lastFailureTime.set(Instant.now());
 
@@ -218,6 +238,87 @@ public class BioIdConnectionManager implements AutoCloseable {
    */
   public String getCurrentEndpoint() {
     return currentEndpoint.get();
+  }
+
+  /**
+   * Gets current connection pool metrics.
+   *
+   * @return connection pool metrics
+   */
+  public ConnectionPoolMetrics getConnectionPoolMetrics() {
+    // Calculate idle connections (total - active)
+    int totalConnections = channels.length;
+    int active = activeConnections.get();
+    int idle = Math.max(0, totalConnections - active);
+    
+    // Update idle connections gauge
+    idleConnections.set(idle);
+    
+    return new ConnectionPoolMetrics(
+        active,
+        idle,
+        totalConnections,
+        totalRequests.get(),
+        failedRequests.get()
+    );
+  }
+
+  /**
+   * Connection pool metrics data class.
+   */
+  public static class ConnectionPoolMetrics {
+    private final int activeConnections;
+    private final int idleConnections;
+    private final int totalConnections;
+    private final long totalRequests;
+    private final long failedRequests;
+
+    public ConnectionPoolMetrics(
+        int activeConnections,
+        int idleConnections,
+        int totalConnections,
+        long totalRequests,
+        long failedRequests) {
+      this.activeConnections = activeConnections;
+      this.idleConnections = idleConnections;
+      this.totalConnections = totalConnections;
+      this.totalRequests = totalRequests;
+      this.failedRequests = failedRequests;
+    }
+
+    public int getActiveConnections() {
+      return activeConnections;
+    }
+
+    public int getIdleConnections() {
+      return idleConnections;
+    }
+
+    public int getTotalConnections() {
+      return totalConnections;
+    }
+
+    public long getTotalRequests() {
+      return totalRequests;
+    }
+
+    public long getFailedRequests() {
+      return failedRequests;
+    }
+
+    public double getSuccessRate() {
+      if (totalRequests == 0) {
+        return 1.0;
+      }
+      return (double) (totalRequests - failedRequests) / totalRequests;
+    }
+
+    public double getUtilization() {
+      if (totalConnections == 0) {
+        return 0.0;
+      }
+      return (double) activeConnections / totalConnections;
+    }
   }
 
   private void initializeChannels() {
@@ -344,19 +445,37 @@ public class BioIdConnectionManager implements AutoCloseable {
 
   private void performHealthCheck() {
     try {
-      // Simple connectivity check - try to get a channel
-      ManagedChannel channel = channels[0];
-      if (channel != null && !channel.isShutdown() && !channel.isTerminated()) {
-        // Channel exists and is not shutdown
-        if (!healthy.get()) {
-          healthy.set(true);
-          logger.info("BioID service health check passed - marking as healthy");
+      // Check all channels and count healthy ones
+      int healthyChannels = 0;
+      for (ManagedChannel channel : channels) {
+        if (channel != null && !channel.isShutdown() && !channel.isTerminated()) {
+          healthyChannels++;
         }
-      } else {
-        if (healthy.get()) {
-          healthy.set(false);
-          logger.warn("BioID service health check failed - marking as unhealthy");
+      }
+      
+      // Consider healthy if at least one channel is available
+      boolean isHealthy = healthyChannels > 0;
+      
+      if (isHealthy != healthy.get()) {
+        healthy.set(isHealthy);
+        if (isHealthy) {
+          logger.info("BioID service health check passed - {} of {} channels healthy", 
+              healthyChannels, channels.length);
+        } else {
+          logger.warn("BioID service health check failed - no healthy channels available");
         }
+      }
+      
+      // Log pool metrics periodically
+      if (logger.isDebugEnabled()) {
+        ConnectionPoolMetrics metrics = getConnectionPoolMetrics();
+        logger.debug("Connection pool status: active={}, idle={}, total={}, requests={}, failures={}, utilization={:.2f}%",
+            metrics.getActiveConnections(),
+            metrics.getIdleConnections(),
+            metrics.getTotalConnections(),
+            metrics.getTotalRequests(),
+            metrics.getFailedRequests(),
+            metrics.getUtilization() * 100);
       }
     } catch (Exception e) {
       if (healthy.get()) {

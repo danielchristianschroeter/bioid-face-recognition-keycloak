@@ -41,6 +41,14 @@ A comprehensive Keycloak extension that integrates BioID's face recognition tech
 - **Full CORS support** - Works from any origin for easy integration
 - **Bearer token authentication** - Secure access with OIDC tokens
 
+### Mobile Responsive UI
+- **Fully responsive design** - Optimized for mobile phones, tablets, and desktop
+- **Touch-optimized controls** - Large touch targets and gesture support
+- **Adaptive layouts** - Portrait and landscape orientation support
+- **Mobile camera handling** - Optimized video capture and face detection
+- **Progressive enhancement** - Works on all modern mobile browsers
+- **Accessibility features** - Screen reader support and keyboard navigation
+
 ### Monitoring and Observability
 - **Comprehensive metrics** via Micrometer integration
 - **Health check endpoints** for readiness and liveness probes
@@ -100,7 +108,7 @@ Create a `.env` file in the project root:
 # BioID Configuration
 BWS_CLIENT_ID=your-bioid-client-id
 BWS_KEY=your-bioid-key
-BWS_ENDPOINT=face.bws-eu.bioid.com
+BWS_ENDPOINT=.bws-eu.bioid.com
 
 # Keycloak Configuration
 KEYCLOAK_ADMIN=admin
@@ -166,7 +174,7 @@ Create `/opt/keycloak/conf/bioid.properties`:
 # BioID Service Configuration
 bioid.clientId=your-client-id
 bioid.key=your-key
-bioid.endpoint=face.bws-eu.bioid.com
+bioid.endpoint=.bws-eu.bioid.com
 
 # Verification Settings
 bioid.verificationThreshold=0.015
@@ -571,6 +579,10 @@ For detailed information, see the documentation in the `docs/` directory:
 - [Active Liveness Detection](docs/ACTIVE_LIVENESS_DETECTION.md) - Liveness detection features
 - [Security Guide](docs/SECURITY.md) - Security best practices and compliance
 - [Dependency Management](docs/DEPENDENCY_MANAGEMENT.md) - Keeping dependencies updated
+
+### Mobile & UI
+- [Mobile Responsive Guide](docs/MOBILE_RESPONSIVE.md) - Mobile optimization and responsive design
+- [Mobile Testing Guide](docs/MOBILE_TESTING_GUIDE.md) - Testing on mobile devices and browsers
 
 ## Changelog
 

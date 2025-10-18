@@ -1,6 +1,6 @@
 package com.bioid.keycloak.config;
 
-import com.bioid.keycloak.client.BioIdGrpcClient;
+import com.bioid.keycloak.client.BioIdClient;
 import com.bioid.keycloak.client.auth.BioIdJwtTokenProvider;
 // import com.bioid.keycloak.client.config.BioIdClientConfig; // Commented out due to Maven reactor build issues
 import com.bioid.keycloak.client.config.BioIdConfiguration;
@@ -62,10 +62,10 @@ public class BioIdCdiProducer {
     return new SimpleMeterRegistry();
   }
 
-  /** Produces BioIdGrpcClient as a CDI bean using reflection. */
+  /** Produces BioIdClient as a CDI bean using reflection. */
   @Produces
   @ApplicationScoped
-  public BioIdGrpcClient produceBioIdGrpcClient(
+  public BioIdClient produceBioIdClient(
       Object config, MeterRegistry meterRegistry) {
     try {
       // Use reflection to avoid compile-time dependency on BioIdClientConfig
@@ -83,11 +83,11 @@ public class BioIdCdiProducer {
 
       // Use reflection for BioIdGrpcClient constructor as well
       Class<?> grpcClientClass = Class.forName("com.bioid.keycloak.client.BioIdGrpcClient");
-      return (BioIdGrpcClient) grpcClientClass
+      return (BioIdClient) grpcClientClass
           .getDeclaredConstructor(Object.class, BioIdJwtTokenProvider.class, BioIdConnectionManager.class, MeterRegistry.class)
           .newInstance(config, tokenProvider, connectionManager, meterRegistry);
     } catch (Exception e) {
-      throw new RuntimeException("Failed to create BioIdGrpcClient using reflection", e);
+      throw new RuntimeException("Failed to create BioIdClient using reflection", e);
     }
   }
 }

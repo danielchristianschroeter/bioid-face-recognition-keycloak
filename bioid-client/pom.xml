@@ -137,18 +137,12 @@
             <goals>
               <goal>compile</goal>
             </goals>
-            <configuration>
-              <outputDirectory>${project.build.directory}/gen/java</outputDirectory>
-            </configuration>
           </execution>
           <execution>
             <id>grpc-compile</id>
             <goals>
               <goal>compile-custom</goal>
             </goals>
-            <configuration>
-              <outputDirectory>${project.build.directory}/gen/grpc</outputDirectory>
-            </configuration>
           </execution>
         </executions>
       </plugin>
@@ -167,8 +161,8 @@
             <phase>generate-sources</phase>
             <configuration>
               <sources>
-                <source>${project.build.directory}/gen/java</source>
-                <source>${project.build.directory}/gen/grpc</source>
+                <source>${project.build.directory}/generated-sources/protobuf/java</source>
+                <source>${project.build.directory}/generated-sources/protobuf/grpc-java</source>
               </sources>
             </configuration>
           </execution>

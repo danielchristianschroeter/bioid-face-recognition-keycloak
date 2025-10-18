@@ -113,7 +113,7 @@ class SimpleCompilationTest {
 
   @Test
   void shouldCreateConnectionPoolMetrics() {
-    // Given
+    // Given - these values would come from real connection manager
     int active = 5;
     int idle = 3;
     int total = 8;

@@ -1161,19 +1161,84 @@
             
             /* Responsive design */
             @media (max-width: 768px) {
+                .instruction-text {
+                    font-size: 0.9rem;
+                    margin-bottom: 1.5rem;
+                    padding: 0 1rem;
+                }
+                
                 .camera-section {
                     max-width: 100%;
-                    margin: 0 1rem 2rem;
+                    margin: 0 0.5rem 1.5rem;
+                    border-radius: 8px;
+                }
+                
+                .camera-container {
+                    aspect-ratio: 3/4;
                 }
                 
                 .face-outline {
-                    width: 160px;
-                    height: 200px;
+                    width: 140px;
+                    height: 180px;
+                }
+                
+                .corner {
+                    width: 16px;
+                    height: 16px;
+                    border-width: 2px;
+                }
+                
+                #status-text {
+                    font-size: 1rem;
+                    padding: 10px 20px;
+                    max-width: 90%;
+                }
+                
+                .challenge-indicator {
+                    padding: 20px;
+                }
+                
+                .challenge-arrow {
+                    border-width: 14px;
+                }
+                
+                .challenge-arrow.up {
+                    border-bottom-width: 22px;
+                }
+                
+                .challenge-arrow.down {
+                    border-top-width: 22px;
+                }
+                
+                .challenge-arrow.left {
+                    border-right-width: 22px;
+                }
+                
+                .challenge-arrow.right {
+                    border-left-width: 22px;
+                }
+                
+                .challenge-text {
+                    font-size: 1.1rem;
+                    padding: 12px 24px;
+                    top: 15px;
+                }
+                
+                .controls-section {
+                    margin-top: 1.5rem;
+                    padding: 0 0.5rem;
+                }
+                
+                .btn-lg {
+                    padding: 0.875rem 2rem;
+                    font-size: 1rem;
+                    min-width: 180px;
                 }
                 
                 .progress-steps {
                     gap: 0.5rem;
                     padding: 1rem 0.5rem;
+                    margin-top: 1rem;
                 }
                 
                 .step {
@@ -1189,6 +1254,86 @@
                     width: 30px;
                     height: 30px;
                     font-size: 0.85rem;
+                }
+            }
+            
+            @media (max-width: 480px) {
+                .instruction-text {
+                    font-size: 0.85rem;
+                    margin-bottom: 1rem;
+                }
+                
+                .camera-section {
+                    margin: 0 0 1rem;
+                }
+                
+                .face-outline {
+                    width: 120px;
+                    height: 160px;
+                }
+                
+                .corner {
+                    width: 14px;
+                    height: 14px;
+                }
+                
+                #status-text {
+                    font-size: 0.9rem;
+                    padding: 8px 16px;
+                }
+                
+                .challenge-indicator {
+                    padding: 16px;
+                }
+                
+                .challenge-text {
+                    font-size: 1rem;
+                    padding: 10px 20px;
+                    top: 10px;
+                }
+                
+                .btn-lg {
+                    padding: 0.75rem 1.5rem;
+                    font-size: 0.95rem;
+                    min-width: 160px;
+                    width: 100%;
+                }
+                
+                .progress-steps {
+                    gap: 0.25rem;
+                    padding: 0.75rem 0.25rem;
+                    flex-wrap: wrap;
+                }
+                
+                .step {
+                    min-width: 50px;
+                    max-width: 70px;
+                }
+                
+                .step-label {
+                    font-size: 0.6rem;
+                }
+                
+                .step-circle {
+                    width: 26px;
+                    height: 26px;
+                    font-size: 0.75rem;
+                }
+            }
+            
+            /* Landscape orientation on mobile */
+            @media (max-width: 768px) and (orientation: landscape) {
+                .camera-section {
+                    max-width: 50%;
+                    margin: 0 auto 1rem;
+                }
+                
+                .camera-container {
+                    aspect-ratio: 4/3;
+                }
+                
+                .progress-steps {
+                    flex-direction: row;
                 }
             }
             

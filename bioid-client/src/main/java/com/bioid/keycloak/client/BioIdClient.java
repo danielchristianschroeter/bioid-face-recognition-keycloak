@@ -58,6 +58,13 @@ public interface BioIdClient extends AutoCloseable {
   String getCurrentEndpoint();
 
   /**
+   * Gets connection pool metrics for monitoring.
+   *
+   * @return connection pool metrics object
+   */
+  Object getConnectionPoolMetrics();
+
+  /**
    * Convenience method for face verification using simple parameters.
    *
    * @param classId the class ID for the user

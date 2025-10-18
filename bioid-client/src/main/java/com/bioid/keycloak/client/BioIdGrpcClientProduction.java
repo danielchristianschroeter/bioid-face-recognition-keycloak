@@ -436,6 +436,14 @@ public class BioIdGrpcClientProduction implements BioIdClient {
   }
 
   @Override
+  public Object getConnectionPoolMetrics() {
+    // This client doesn't use connection pooling directly
+    // Return null to indicate no pool metrics available
+    // The connection manager handles pooling at a higher level
+    return null;
+  }
+
+  @Override
   public boolean verifyFaceWithImageData(long classId, String imageData) throws BioIdException {
     logger.info("BWS gRPC verifyFaceWithImageData called for classId: {}", classId);
 

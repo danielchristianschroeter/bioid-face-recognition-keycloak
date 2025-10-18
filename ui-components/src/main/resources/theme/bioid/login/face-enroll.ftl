@@ -511,24 +511,190 @@
             }
             
             /* Responsive adjustments */
+            @media (max-width: 768px) {
+                #kc-form {
+                    padding: 0.75rem;
+                }
+                
+                #kc-page-title {
+                    font-size: 1.3rem;
+                    margin-bottom: 0.4rem;
+                }
+                
+                .subtitle {
+                    font-size: 0.85rem;
+                    margin-bottom: 1rem;
+                }
+                
+                .camera-section {
+                    margin-bottom: 1.25rem;
+                    border-width: 1px;
+                }
+                
+                .face-guide {
+                    width: 60%;
+                    height: 80%;
+                }
+                
+                .progress-section {
+                    margin-bottom: 1.25rem;
+                }
+                
+                .progress-indicator {
+                    max-width: 180px;
+                }
+                
+                .step {
+                    width: 28px;
+                    height: 28px;
+                    font-size: 0.85rem;
+                }
+                
+                .connector {
+                    margin: 0 6px;
+                }
+                
+                .instruction-text {
+                    font-size: 0.9rem;
+                    min-height: 2.2em;
+                }
+                
+                .controls-section {
+                    padding: 0 0.75rem 1.25rem 0.75rem;
+                }
+                
+                .btn-lg {
+                    padding: 0.75rem 1.75rem;
+                    font-size: 1rem;
+                    min-width: 140px;
+                }
+                
+                .security-notice {
+                    padding: 0.875rem 1.25rem;
+                    font-size: 0.8rem;
+                }
+            }
+            
             @media (max-width: 576px) {
                 #kc-form {
                     padding: 0.5rem;
+                }
+                
+                #kc-page-title {
+                    font-size: 1.2rem;
+                }
+                
+                .subtitle {
+                    font-size: 0.8rem;
                 }
                 
                 .camera-section {
                     margin-bottom: 1rem;
                 }
                 
+                .face-guide {
+                    width: 65%;
+                    height: 85%;
+                }
+                
+                .progress-indicator {
+                    max-width: 160px;
+                }
+                
+                .step {
+                    width: 26px;
+                    height: 26px;
+                    font-size: 0.8rem;
+                }
+                
+                .connector {
+                    margin: 0 4px;
+                    height: 2px;
+                }
+                
+                .instruction-text {
+                    font-size: 0.85rem;
+                }
+                
                 .btn-lg {
-                    padding: 0.75rem 1.5rem;
-                    font-size: 1rem;
-                    min-width: 140px;
+                    padding: 0.7rem 1.5rem;
+                    font-size: 0.95rem;
+                    min-width: 130px;
                 }
                 
                 .button-group {
                     flex-direction: column;
+                    align-items: stretch;
+                    gap: 0.75rem;
+                }
+                
+                .button-group button {
+                    width: 100%;
+                }
+                
+                .security-notice {
+                    padding: 0.75rem 1rem;
+                    font-size: 0.75rem;
+                }
+            }
+            
+            @media (max-width: 400px) {
+                #kc-form {
+                    padding: 0.25rem;
+                }
+                
+                #kc-page-title {
+                    font-size: 1.1rem;
+                }
+                
+                .subtitle {
+                    font-size: 0.75rem;
+                }
+                
+                .progress-indicator {
+                    max-width: 140px;
+                }
+                
+                .step {
+                    width: 24px;
+                    height: 24px;
+                    font-size: 0.75rem;
+                }
+                
+                .instruction-text {
+                    font-size: 0.8rem;
+                }
+                
+                .btn-lg {
+                    padding: 0.65rem 1.25rem;
+                    font-size: 0.9rem;
+                    min-width: 120px;
+                }
+            }
+            
+            /* Landscape orientation on mobile */
+            @media (max-width: 768px) and (orientation: landscape) {
+                .camera-section {
+                    max-width: 50%;
+                    margin-left: auto;
+                    margin-right: auto;
+                }
+                
+                #kc-form-wrapper {
+                    display: flex;
+                    flex-direction: row;
                     align-items: center;
+                    gap: 1rem;
+                }
+                
+                .camera-section {
+                    flex: 1;
+                    margin-bottom: 0;
+                }
+                
+                .progress-section,
+                .controls-section {
+                    flex: 1;
                 }
             }
         </style>
