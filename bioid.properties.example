@@ -1,0 +1,157 @@
+# BioID Keycloak Extension Configuration Example
+# Copy this file to bioid.properties and update with your credentials
+
+# ============================================================================
+# BWS gRPC Configuration (Required for biometric operations)
+# ============================================================================
+
+# BWS gRPC endpoint
+# EU: face.bws-eu.bioid.com:443
+# US: face.bws-us.bioid.com:443
+bioid.endpoint=face.bws-eu.bioid.com:443
+
+# Your BWS client ID (get from BWS Portal)
+bioid.clientId=your-client-id-here
+
+# Your BWS client secret/key (get from BWS Portal)
+bioid.key=your-client-secret-here
+
+# JWT token expiration in minutes (default: 60)
+bioid.jwtExpireMinutes=60
+
+# ============================================================================
+# BWS Management API Configuration (Required for admin features)
+# ============================================================================
+
+# JWT token for Management API authentication
+# Generate this token from:
+# 1. BWS Portal (https://bwsportal.bioid.com) - User Profile > Management Access JWT
+# 2. JWT tool: jwt.exe --sub "your-email@example.com" --key "your-api-key"
+# See docs/BWS_MANAGEMENT_API_SETUP.md for detailed instructions
+bws.management.jwtToken=your-jwt-token-here
+
+# Management API base URL (optional, defaults to https://bwsportal.bioid.com/api)
+# Only change this if using a different BWS Portal instance
+# bws.management.url=https://bwsportal.bioid.com/api
+
+# ============================================================================
+# Verification Settings
+# ============================================================================
+
+# Verification threshold (lower = stricter, default: 0.015)
+# Recommended range: 0.01 to 0.05
+verification.threshold=0.015
+
+# Maximum verification retry attempts (default: 3)
+verification.maxRetries=3
+
+# Verification timeout in seconds (default: 4)
+verification.timeoutSeconds=4
+
+# ============================================================================
+# Enrollment Settings
+# ============================================================================
+
+# Enrollment timeout in seconds (default: 7)
+enrollment.timeoutSeconds=7
+
+# ============================================================================
+# Template Management
+# ============================================================================
+
+# Template time-to-live in days (default: 730 = 2 years)
+# Set to 0 to disable automatic cleanup
+template.ttl.days=730
+
+# Cleanup interval in hours (default: 24)
+template.cleanupInterval.hours=24
+
+# Template type: STANDARD or ENHANCED (default: STANDARD)
+template.type=STANDARD
+
+# Enable template encryption (default: true)
+template.encryption.enabled=true
+
+# ============================================================================
+# gRPC Connection Settings
+# ============================================================================
+
+# Connection pool size (default: 5)
+grpc.channelPool.size=5
+
+# Keep-alive time in seconds (default: 30)
+grpc.keepAlive.timeSeconds=30
+
+# Retry max attempts (default: 3)
+grpc.retry.maxAttempts=3
+
+# Retry backoff multiplier (default: 2.0)
+grpc.retry.backoffMultiplier=2.0
+
+# ============================================================================
+# Health Check Settings
+# ============================================================================
+
+# Health check interval in seconds (default: 60)
+healthCheck.interval.seconds=60
+
+# Health check timeout in seconds (default: 5)
+healthCheck.timeout.seconds=5
+
+# ============================================================================
+# Regional Settings (Optional)
+# ============================================================================
+
+# Preferred region: EU, US, or AUTO (default: AUTO)
+# regional.preferredRegion=AUTO
+
+# Require data residency (default: false)
+# regional.dataResidencyRequired=false
+
+# Enable automatic failover (default: true)
+# regional.failoverEnabled=true
+
+# Latency threshold for region selection in ms (default: 100)
+# regional.latencyThresholdMs=100
+
+# ============================================================================
+# Liveness Detection Settings
+# ============================================================================
+
+# Enable active liveness detection (default: false)
+# liveness.active.enabled=false
+
+# Enable challenge-response liveness (default: false)
+# liveness.challengeResponse.enabled=false
+
+# Liveness confidence threshold (default: 0.8)
+# liveness.confidenceThreshold=0.8
+
+# Maximum liveness overhead in ms (default: 200)
+# liveness.maxOverheadMs=200
+
+# Enable adaptive liveness mode (default: false)
+# liveness.adaptiveMode=false
+
+# Fallback to password if liveness fails (default: false)
+# liveness.fallbackToPassword=false
+
+# Number of liveness challenges (default: 1)
+# liveness.challengeCount=1
+
+# Challenge timeout in seconds (default: 30)
+# liveness.challengeTimeoutSeconds=30
+
+# ============================================================================
+# Debug Settings (Development Only)
+# ============================================================================
+
+# Enable debug image storage (default: false)
+# WARNING: Only enable in development! Stores biometric images to disk
+# debug.imageStorage.enabled=false
+
+# Debug image storage path (default: ./debug-images)
+# debug.imageStorage.path=./debug-images
+
+# Include metadata with debug images (default: true)
+# debug.imageStorage.includeMetadata=true

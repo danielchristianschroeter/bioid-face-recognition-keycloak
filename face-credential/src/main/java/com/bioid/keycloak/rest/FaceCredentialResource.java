@@ -1,6 +1,8 @@
 package com.bioid.keycloak.rest;
 
 import com.bioid.keycloak.client.BioIdClient;
+import com.bioid.keycloak.client.BioIdGrpcClientProduction;
+import com.bioid.keycloak.client.config.BioIdConfiguration;
 import com.bioid.keycloak.client.exception.BioIdException;
 import com.bioid.keycloak.credential.FaceCredentialModel;
 import com.bioid.keycloak.credential.FaceCredentialProvider;
@@ -93,8 +95,7 @@ public class FaceCredentialResource {
           credential.getClassId());
 
       // Get BioID client - create directly from configuration
-      com.bioid.keycloak.client.config.BioIdConfiguration config = 
-          com.bioid.keycloak.client.config.BioIdConfiguration.getInstance();
+      BioIdConfiguration config = BioIdConfiguration.getInstance();
       
       if (config.getClientId() == null || config.getClientId().trim().isEmpty() ||
           config.getKey() == null || config.getKey().trim().isEmpty()) {
@@ -106,7 +107,7 @@ public class FaceCredentialResource {
             .entity(Map.of("error", "BioID service not configured")).build();
       }
 
-      BioIdClient bioIdClient = new com.bioid.keycloak.client.BioIdGrpcClientProduction(
+      BioIdClient bioIdClient = new BioIdGrpcClientProduction(
           config, config.getEndpoint(), config.getClientId(), config.getKey());
 
       // Get template status with thumbnails
@@ -215,13 +216,12 @@ public class FaceCredentialResource {
       }
 
       // Get BioID client for template deletion
-      com.bioid.keycloak.client.config.BioIdConfiguration config = 
-          com.bioid.keycloak.client.config.BioIdConfiguration.getInstance();
+      BioIdConfiguration config = BioIdConfiguration.getInstance();
       BioIdClient bioIdClient = null;
       
       if (config.getClientId() != null && !config.getClientId().trim().isEmpty() &&
           config.getKey() != null && !config.getKey().trim().isEmpty()) {
-        bioIdClient = new com.bioid.keycloak.client.BioIdGrpcClientProduction(
+        bioIdClient = new BioIdGrpcClientProduction(
             config, config.getEndpoint(), config.getClientId(), config.getKey());
       }
 

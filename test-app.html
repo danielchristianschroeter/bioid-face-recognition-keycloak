@@ -5,6 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BioID Face Authentication Test</title>
     <style>
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5568d3;
+            --secondary: #764ba2;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --light: #f8fafc;
+            --dark: #1e293b;
+            --border: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -12,149 +27,205 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
             min-height: 100vh;
             padding: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            line-height: 1.6;
         }
 
         .container {
             background: white;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             max-width: 900px;
             width: 100%;
-            padding: 40px;
-            animation: slideIn 0.3s ease;
+            margin: 0 auto;
+            padding: 32px;
         }
 
         @keyframes slideIn {
             from {
                 opacity: 0;
-                transform: translateY(-20px);
+                transform: translateY(-30px) scale(0.95);
             }
             to {
                 opacity: 1;
-                transform: translateY(0);
+                transform: translateY(0) scale(1);
             }
         }
 
         h1 {
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 2rem;
+            color: #1e293b;
+            margin-bottom: 8px;
+            font-size: 1.875rem;
+            font-weight: 600;
         }
 
         h2 {
-            color: #555;
-            margin: 20px 0 15px 0;
+            color: #334155;
+            margin: 24px 0 12px 0;
             font-size: 1.5rem;
+            font-weight: 600;
         }
 
         h3 {
-            color: #666;
-            margin: 15px 0 10px 0;
-            font-size: 1.2rem;
+            color: #475569;
+            margin: 16px 0 8px 0;
+            font-size: 1.125rem;
+            font-weight: 600;
         }
 
         p {
-            color: #666;
-            line-height: 1.6;
-            margin-bottom: 15px;
+            color: #64748b;
+            line-height: 1.7;
+            margin-bottom: 16px;
         }
 
         .button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #667eea;
             color: white;
-            padding: 12px 24px;
+            padding: 10px 20px;
             border: none;
-            border-radius: 8px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
-            margin: 10px 5px;
+            font-size: 14px;
+            font-weight: 500;
+            margin: 6px 4px;
             text-decoration: none;
             display: inline-block;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
         }
 
         .button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            background: #5568d3;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .button:active {
+            transform: translateY(0);
         }
 
         .logout-button {
-            background: #dc3545;
+            background: #ef4444;
         }
 
         .logout-button:hover {
-            background: #c82333;
-            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+            background: #dc2626;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
         }
 
         .user-info {
-            background-color: #d4edda;
-            border-left: 4px solid #28a745;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+            border-left: 4px solid var(--success);
+            padding: 24px;
+            border-radius: 16px;
+            margin: 24px 0;
+            box-shadow: 0 1px 3px rgba(16, 185, 129, 0.1);
         }
 
         .user-info p {
-            margin: 8px 0;
-            color: #155724;
+            margin: 10px 0;
+            color: #065f46;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .user-info strong {
+            color: #047857;
         }
 
         .error {
-            background-color: #f8d7da;
-            border-left: 4px solid #dc3545;
-            color: #721c24;
-            padding: 20px;
-            border-radius: 8px;
-            margin: 20px 0;
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            border-left: 4px solid var(--danger);
+            color: #991b1b;
+            padding: 24px;
+            border-radius: 16px;
+            margin: 24px 0;
             white-space: pre-wrap;
-            line-height: 1.6;
+            line-height: 1.7;
+            box-shadow: 0 1px 3px rgba(239, 68, 68, 0.1);
         }
 
         .error h3 {
-            color: #721c24;
-            margin-bottom: 10px;
+            color: #991b1b;
+            margin-bottom: 12px;
+            font-weight: 600;
         }
 
         pre {
-            background-color: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 12px;
             overflow-x: auto;
-            font-size: 0.9rem;
-            border: 1px solid #dee2e6;
+            font-size: 0.875rem;
+            border: 1px solid var(--border);
+            font-family: 'Fira Code', 'Courier New', monospace;
+            line-height: 1.6;
         }
 
         .info-box {
-            background-color: #d1ecf1;
-            border-left: 4px solid #0c5460;
-            color: #0c5460;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 20px 0;
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border-left: 4px solid var(--info);
+            color: #1e40af;
+            padding: 24px;
+            border-radius: 16px;
+            margin: 24px 0;
+            box-shadow: 0 1px 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .info-box strong {
+            color: #1e3a8a;
+            font-size: 1.125rem;
+        }
+
+        .info-box a {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s ease;
+        }
+
+        .info-box a:hover {
+            color: #1d4ed8;
+            text-decoration: underline;
+        }
+
+        .info-box code {
+            background: white;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.875rem;
+            border: 1px solid #bfdbfe;
+        }
+
+        .info-box ol {
+            margin-left: 24px;
+            margin-top: 12px;
+            line-height: 2;
+        }
+
+        .info-box ol li {
+            margin: 8px 0;
         }
 
         .loading {
             text-align: center;
-            padding: 40px;
+            padding: 60px 40px;
         }
 
         .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
+            border: 4px solid #e2e8f0;
+            border-top: 4px solid var(--primary);
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px auto;
+            width: 48px;
+            height: 48px;
+            animation: spin 0.8s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+            margin: 0 auto 24px auto;
         }
 
         @keyframes spin {
@@ -162,42 +233,116 @@
             100% { transform: rotate(360deg); }
         }
 
+        .footer {
+            text-align: center;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #e2e8f0;
+            color: #94a3b8;
+            font-size: 0.875rem;
+        }
+
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
         .button-group {
             display: flex;
-            gap: 10px;
+            gap: 12px;
             flex-wrap: wrap;
-            margin: 20px 0;
+            margin: 24px 0;
+        }
+
+        .card {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 16px 0;
+            border: 1px solid #e2e8f0;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            gap: 6px;
+        }
+
+        .badge-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-danger {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 24px 0;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #64748b;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-top: 8px;
         }
 
         @media (max-width: 768px) {
             body {
-                padding: 10px;
+                padding: 12px;
             }
 
             .container {
-                padding: 25px;
-                max-width: 100%;
+                padding: 20px;
             }
 
             h1 {
-                font-size: 1.6rem;
+                font-size: 1.5rem;
             }
 
             h2 {
-                font-size: 1.3rem;
+                font-size: 1.25rem;
             }
 
-            h3 {
-                font-size: 1.1rem;
-            }
-
-            p {
-                font-size: 0.9rem;
-            }
-
-            .info-box {
-                padding: 12px;
-                font-size: 0.85rem;
+            .stats-grid {
+                grid-template-columns: 1fr;
             }
 
             .info-box ol {
@@ -308,8 +453,8 @@
 </head>
 <body>
     <div class="container">
-        <h1>🔐 BioID Face Authentication Test</h1>
-        <p>This test page demonstrates the complete OIDC flow with token exchange and user info retrieval.</p>
+        <h1>BioID Face Authentication Test</h1>
+        <p style="color: #64748b;">This test page demonstrates the complete OIDC flow with token exchange and user info retrieval.</p>
         
         <div class="info-box">
             <strong>⚠️ CORS Configuration Required</strong>
@@ -329,44 +474,81 @@
         </div>
         
         <div id="loginSection">
-            <h2>Login Test</h2>
-            <p>Click the button below to start the authentication flow. You'll be redirected to Keycloak, where you can test your username/password + face authentication.</p>
-            <button class="button" onclick="login()">Login with Face Authentication</button>
+            <div class="card">
+                <h2>Login Test</h2>
+                <p>Click the button below to start the authentication flow. You'll be redirected to Keycloak, where you can test your username/password + face authentication.</p>
+                <button class="button" onclick="login()">Login with Face Authentication</button>
+            </div>
             
-            <h3>Quick Links</h3>
-            <p>You can also access these Keycloak pages directly:</p>
-            <a href="http://localhost:8080/realms/bioid-demo/account" class="button" target="_blank">Account Management</a>
-            <a href="http://localhost:8080/admin/master/console/#/bioid-demo" class="button" target="_blank">Admin Console</a>
+            <div class="card">
+                <h3>Quick Links</h3>
+                <p>Access Keycloak pages directly:</p>
+                <div class="button-group">
+                    <a href="http://localhost:8080/realms/bioid-demo/account" class="button" target="_blank">Account Management</a>
+                    <a href="http://localhost:8080/admin/master/console/#/bioid-demo" class="button" target="_blank">Admin Console</a>
+                </div>
+            </div>
         </div>
 
         <div id="userSection" style="display: none;">
-            <h2>✅ Authentication Successful!</h2>
+            <div class="card" style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-left: 4px solid var(--success);">
+                <h2>✅ Authentication Successful!</h2>
+                <p style="color: #065f46;">You have successfully authenticated with BioID Face Recognition.</p>
+            </div>
             
-            <div class="user-info">
-                <h3>👤 User Information</h3>
+            <div class="card user-info">
+                <h3>User Information</h3>
                 <div id="userInfo"></div>
             </div>
             
-            <div id="credentialInfo" style="background: #e7f3ff; border-left: 4px solid #0066cc; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                <h3>🔐 Face Credentials</h3>
-                <p style="color: #0c5460;">Your face credentials are managed by Keycloak and stored in BioID BWS.</p>
+            <div class="card" id="credentialInfo" style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-left: 4px solid var(--info);">
+                <h3>Face Credentials</h3>
+                <p style="color: #1e40af;">Your face credentials are managed by Keycloak and stored in BioID BWS.</p>
                 <div id="credentialDetails"></div>
-                <div id="enrolledImages" style="margin-top: 15px;"></div>
+                <div id="enrolledImages" style="margin-top: 20px;"></div>
             </div>
             
-            <h3>⚙️ Account Management</h3>
-            <p>Manage your account and face enrollment:</p>
-            <div class="button-group">
-                <a href="http://localhost:8080/realms/bioid-demo/account" class="button" target="_blank">
-                    👤 Account Management
-                </a>
-                <a href="http://localhost:8080/realms/bioid-demo/account/#/security/signingin" class="button" target="_blank">
-                    📸 Face Enrollment
-                </a>
+            <div class="card">
+                <h3>Account Management</h3>
+                <p>Manage your account and face enrollment:</p>
+                <div class="button-group">
+                    <a href="http://localhost:8080/realms/bioid-demo/account" class="button" target="_blank">Account Management</a>
+                    <a href="http://localhost:8080/realms/bioid-demo/account/#/security/signingin" class="button" target="_blank">Face Enrollment</a>
+                </div>
             </div>
             
-            <br>
-            <button class="button logout-button" onclick="logout()">🚪 Logout</button>
+            
+            <div class="card">
+                <button class="button logout-button" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <div id="adminSection" style="display: none;">
+            <div class="card" style="background: #fef3c7; border-left: 4px solid #f59e0b;">
+                <h2>BWS Admin Panel</h2>
+                <p style="color: #92400e;">Manage face templates across all users (requires bws-admin role)</p>
+            </div>
+            
+            <div class="card" id="adminStats" style="background: #eff6ff; border-left: 4px solid #3b82f6;">
+                <h3>Template Statistics</h3>
+                <div id="statsContent">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Loading statistics...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>Actions</h3>
+                <div class="button-group">
+                    <button class="button" onclick="loadAllTemplates()">View All Enrolled Faces</button>
+                    <button class="button" onclick="validateTemplates()">Validate Templates</button>
+                    <button class="button" onclick="findOrphanedTemplates()">Find Orphaned Templates</button>
+                </div>
+            </div>
+            
+            <div id="adminTemplateList"></div>
         </div>
 
         <div id="loadingSection" style="display: none;">
@@ -622,6 +804,9 @@
 
             // Fetch template status and enrolled images
             await loadTemplateStatus(accessToken);
+            
+            // Check if user has admin role and show admin panel
+            showAdminPanelIfAuthorized(accessToken);
         }
 
         async function loadTemplateStatus(accessToken) {
@@ -839,6 +1024,525 @@ Common Issues:
             const hash = await crypto.subtle.digest('SHA-256', data);
             return base64URLEncode(new Uint8Array(hash));
         }
+
+        // ============================================
+        // BWS Admin Panel Functions
+        // ============================================
+
+        // Check if user has bws-admin role
+        function checkAdminRole(accessToken) {
+            try {
+                const tokenPayload = JSON.parse(atob(accessToken.split('.')[1]));
+                const realmRoles = tokenPayload.realm_access?.roles || [];
+                return realmRoles.includes('bws-admin');
+            } catch (e) {
+                console.error('Failed to check admin role:', e);
+                return false;
+            }
+        }
+
+        // Show admin panel if user has admin role
+        function showAdminPanelIfAuthorized(accessToken) {
+            if (checkAdminRole(accessToken)) {
+                document.getElementById('adminSection').style.display = 'block';
+                loadAdminStats(accessToken);
+            }
+        }
+
+        // Load admin statistics
+        async function loadAdminStats(accessToken) {
+            const statsContent = document.getElementById('statsContent');
+            
+            try {
+                statsContent.innerHTML = '<p><em>Loading statistics...</em></p>';
+                
+                const statsUrl = `${KEYCLOAK_URL}/realms/${REALM}/bws-admin/stats`;
+                
+                const response = await fetch(statsUrl, {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const stats = await response.json();
+                
+                // Format last enrollment date
+                let lastEnrollmentDisplay = 'Never';
+                if (stats.lastEnrollment) {
+                    try {
+                        const date = new Date(stats.lastEnrollment);
+                        // Check if date is valid and not epoch
+                        if (date.getTime() > 0 && date.getFullYear() > 1970) {
+                            lastEnrollmentDisplay = date.toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                            });
+                        }
+                    } catch (e) {
+                        console.warn('Invalid date format:', stats.lastEnrollment);
+                    }
+                }
+                
+                // Build BWS info card
+                let bwsInfo = '';
+                if (stats.bwsClassCount !== null && stats.bwsClassCount !== undefined) {
+                    const diff = stats.bwsClassCount - stats.totalTemplates;
+                    const diffColor = diff === 0 ? '#10b981' : (diff > 0 ? '#f59e0b' : '#ef4444');
+                    const diffIcon = diff === 0 ? '✓' : (diff > 0 ? '▲' : '▼');
+                    bwsInfo = `
+                        <div class="stat-card">
+                            <div class="stat-value">${escapeHtml(stats.bwsClassCount)}</div>
+                            <div class="stat-label">BWS Classes</div>
+                            ${diff !== 0 ? `<div style="color: ${diffColor}; font-size: 0.875rem; margin-top: 8px; font-weight: 600;">${diffIcon} ${Math.abs(diff)} ${diff > 0 ? 'more' : 'fewer'} than Keycloak</div>` : '<div style="color: #10b981; font-size: 0.875rem; margin-top: 8px; font-weight: 600;">✓ In sync</div>'}
+                        </div>
+                    `;
+                } else if (stats.bwsError) {
+                    bwsInfo = `
+                        <div class="stat-card" style="background: #fef2f2; border-color: #fecaca;">
+                            <div class="stat-value" style="font-size: 1.5rem; color: #ef4444;">⚠</div>
+                            <div class="stat-label">BWS Classes</div>
+                            <div style="color: #991b1b; font-size: 0.75rem; margin-top: 8px;">API Error</div>
+                        </div>
+                    `;
+                }
+                
+                // Build orphaned templates card with color coding
+                const orphanedColor = stats.orphanedTemplates > 0 ? '#f59e0b' : '#10b981';
+                const orphanedBg = stats.orphanedTemplates > 0 ? '#fffbeb' : 'white';
+                const orphanedBorder = stats.orphanedTemplates > 0 ? '#fde68a' : '#e2e8f0';
+                
+                statsContent.innerHTML = `
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value">${escapeHtml(stats.totalTemplates || 0)}</div>
+                            <div class="stat-label">Keycloak Templates</div>
+                            <div style="color: #64748b; font-size: 0.75rem; margin-top: 8px;">Enrolled users</div>
+                        </div>
+                        ${bwsInfo}
+                        <div class="stat-card" style="background: ${orphanedBg}; border-color: ${orphanedBorder};">
+                            <div class="stat-value" style="color: ${orphanedColor};">${escapeHtml(stats.orphanedTemplates || 0)}</div>
+                            <div class="stat-label">Potential Issues</div>
+                            <div style="color: #64748b; font-size: 0.75rem; margin-top: 8px;">${stats.orphanedTemplates > 0 ? 'Needs attention' : 'All good'}</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" style="font-size: 1.25rem;">${escapeHtml(lastEnrollmentDisplay)}</div>
+                            <div class="stat-label">Last Enrollment</div>
+                            <div style="color: #64748b; font-size: 0.75rem; margin-top: 8px;">Most recent</div>
+                        </div>
+                    </div>
+                `;
+
+            } catch (error) {
+                console.error('Failed to load admin stats:', error);
+                statsContent.innerHTML = `
+                    <div style="background: #f8d7da; padding: 10px; border-radius: 5px; color: #721c24;">
+                        <p><strong>❌ Error Loading Statistics</strong></p>
+                        <p style="margin-top: 10px;">${escapeHtml(error.message)}</p>
+                        <p style="margin-top: 10px;">Make sure you've deployed the extension: <code>mvn clean install</code> then copy JAR to Keycloak and restart.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Load all enrolled templates
+        async function loadAllTemplates() {
+            const accessToken = localStorage.getItem('access_token');
+            if (!accessToken) {
+                showError('Not authenticated');
+                return;
+            }
+
+            if (!checkAdminRole(accessToken)) {
+                showError('Access denied: bws-admin role required');
+                return;
+            }
+
+            const templateList = document.getElementById('adminTemplateList');
+            templateList.innerHTML = '<p><em>Loading all enrolled faces...</em></p>';
+
+            try {
+                const templatesUrl = `${KEYCLOAK_URL}/realms/${REALM}/bws-admin/templates`;
+                
+                const response = await fetch(templatesUrl, {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const templates = await response.json();
+                
+                if (templates.length === 0) {
+                    templateList.innerHTML = '<p style="color: #666;">No enrolled faces found.</p>';
+                    return;
+                }
+
+                let html = `
+                    <div style="background: white; border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead style="background: #f8f9fa;">
+                                <tr>
+                                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Class ID</th>
+                                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Username</th>
+                                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Enrolled At</th>
+                                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Status</th>
+                                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                templates.forEach(template => {
+                    const statusBadge = template.keycloakUserExists 
+                        ? '<span style="background: #d4edda; color: #155724; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem;">✅ Active</span>'
+                        : '<span style="background: #f8d7da; color: #721c24; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem;">⚠️ Orphaned</span>';
+                    
+                    html += `
+                        <tr style="border-bottom: 1px solid #dee2e6;">
+                            <td style="padding: 12px;">${escapeHtml(template.classId)}</td>
+                            <td style="padding: 12px;">${escapeHtml(template.username || 'N/A')}</td>
+                            <td style="padding: 12px;">${escapeHtml(template.enrolledAt ? new Date(template.enrolledAt).toLocaleString() : 'N/A')}</td>
+                            <td style="padding: 12px;">${statusBadge}</td>
+                            <td style="padding: 12px;">
+                                <button class="button" style="padding: 6px 12px; margin: 0; font-size: 0.85rem;" 
+                                        onclick="viewTemplateDetails('${escapeHtml(template.classId)}')">
+                                    👁️ View
+                                </button>
+                                ${!template.keycloakUserExists ? `
+                                    <button class="button logout-button" style="padding: 6px 12px; margin: 0 0 0 5px; font-size: 0.85rem;" 
+                                            onclick="deleteOrphanedTemplate('${escapeHtml(template.classId)}')">
+                                        🗑️ Delete
+                                    </button>
+                                ` : ''}
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+
+                templateList.innerHTML = html;
+
+            } catch (error) {
+                console.error('Failed to load templates:', error);
+                templateList.innerHTML = `
+                    <div style="background: #f8d7da; padding: 15px; border-radius: 5px; color: #721c24;">
+                        <p><strong>❌ Error Loading Templates</strong></p>
+                        <p style="margin-top: 10px;">${escapeHtml(error.message)}</p>
+                        <p style="margin-top: 10px;">Make sure the extension is deployed and Keycloak restarted.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // View template details
+        async function viewTemplateDetails(classId) {
+            const accessToken = localStorage.getItem('access_token');
+            if (!accessToken || !checkAdminRole(accessToken)) {
+                showError('Access denied');
+                return;
+            }
+
+            try {
+                const detailsUrl = `${KEYCLOAK_URL}/realms/${REALM}/bws-admin/templates/${classId}`;
+                
+                const response = await fetch(detailsUrl, {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const details = await response.json();
+                
+                // Display details in a modal or alert
+                const detailsText = `
+Template Details:
+─────────────────
+Class ID: ${details.classId}
+Username: ${details.username || 'N/A'}
+Enrolled At: ${details.enrolledAt ? new Date(details.enrolledAt).toLocaleString() : 'N/A'}
+Encoder Version: ${details.encoderVersion || 'N/A'}
+Feature Vectors: ${details.featureVectors || 0}
+Thumbnails: ${details.thumbnailsStored || 0}
+Status: ${details.keycloakUserExists ? 'Active' : 'Orphaned'}
+                `;
+                
+                alert(detailsText);
+
+            } catch (error) {
+                console.error('Failed to load template details:', error);
+                alert(`Failed to load template details: ${error.message}\n\nBackend endpoint required: GET /realms/${REALM}/bws-admin/templates/${classId}`);
+            }
+        }
+
+        // Delete orphaned template
+        async function deleteOrphanedTemplate(classId) {
+            const accessToken = localStorage.getItem('access_token');
+            if (!accessToken || !checkAdminRole(accessToken)) {
+                showError('Access denied');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to delete template ${classId}?\n\nThis action cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                const deleteUrl = `${KEYCLOAK_URL}/realms/${REALM}/bws-admin/templates/${classId}`;
+                
+                const response = await fetch(deleteUrl, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                alert(`✅ Template ${classId} deleted successfully`);
+                
+                // Reload template list
+                loadAllTemplates();
+
+            } catch (error) {
+                console.error('Failed to delete template:', error);
+                alert(`❌ Failed to delete template: ${error.message}\n\nBackend endpoint required: DELETE /realms/${REALM}/bws-admin/templates/${classId}\n\nThe backend should call BWS gRPC DeleteTemplate method.`);
+            }
+        }
+
+        // Validate templates (check for inconsistencies)
+        async function validateTemplates() {
+            const accessToken = localStorage.getItem('access_token');
+            if (!accessToken || !checkAdminRole(accessToken)) {
+                showError('Access denied');
+                return;
+            }
+
+            const templateList = document.getElementById('adminTemplateList');
+            templateList.innerHTML = '<p><em>Validating templates...</em></p>';
+
+            try {
+                const validateUrl = `${KEYCLOAK_URL}/realms/${REALM}/bws-admin/validate`;
+                
+                const response = await fetch(validateUrl, {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const validation = await response.json();
+                
+                let html = `
+                    <div style="background: ${validation.isValid ? '#d4edda' : '#fff3cd'}; padding: 20px; border-radius: 8px; border-left: 4px solid ${validation.isValid ? '#28a745' : '#ffc107'};">
+                        <h3 style="color: ${validation.isValid ? '#155724' : '#856404'}; margin-bottom: 15px;">
+                            ${validation.isValid ? '✅ Validation Passed' : '⚠️ Issues Found'}
+                        </h3>
+                `;
+
+                if (validation.orphanedTemplates && validation.orphanedTemplates.length > 0) {
+                    html += `
+                        <p style="color: #856404; margin-top: 10px;"><strong>Orphaned Templates (${validation.orphanedTemplates.length}):</strong></p>
+                        <ul style="margin-left: 20px; color: #856404;">
+                    `;
+                    validation.orphanedTemplates.forEach(classId => {
+                        html += `<li>Class ID: ${escapeHtml(classId)}</li>`;
+                    });
+                    html += `</ul>`;
+                }
+
+                if (validation.missingTemplates && validation.missingTemplates.length > 0) {
+                    html += `
+                        <p style="color: #856404; margin-top: 10px;"><strong>Users with Missing Templates (${validation.missingTemplates.length}):</strong></p>
+                        <ul style="margin-left: 20px; color: #856404;">
+                    `;
+                    validation.missingTemplates.forEach(username => {
+                        html += `<li>${escapeHtml(username)}</li>`;
+                    });
+                    html += `</ul>`;
+                }
+
+                html += `
+                        <p style="margin-top: 15px; color: ${validation.isValid ? '#155724' : '#856404'};">
+                            <strong>Summary:</strong> ${escapeHtml(validation.message || 'Validation complete')}
+                        </p>
+                    </div>
+                `;
+
+                templateList.innerHTML = html;
+
+            } catch (error) {
+                console.error('Failed to validate templates:', error);
+                templateList.innerHTML = `
+                    <div style="background: #f8d7da; padding: 15px; border-radius: 5px; color: #721c24;">
+                        <p><strong>❌ Error Validating Templates</strong></p>
+                        <p style="margin-top: 10px;">${escapeHtml(error.message)}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Find orphaned templates
+        async function findOrphanedTemplates() {
+            const accessToken = localStorage.getItem('access_token');
+            if (!accessToken || !checkAdminRole(accessToken)) {
+                showError('Access denied');
+                return;
+            }
+
+            const templateList = document.getElementById('adminTemplateList');
+            templateList.innerHTML = '<p><em>Searching for orphaned templates...</em></p>';
+
+            try {
+                const orphanedUrl = `${KEYCLOAK_URL}/realms/${REALM}/bws-admin/orphaned`;
+                
+                const response = await fetch(orphanedUrl, {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const orphaned = await response.json();
+                
+                if (orphaned.length === 0) {
+                    templateList.innerHTML = `
+                        <div style="background: #d4edda; padding: 20px; border-radius: 8px; border-left: 4px solid #28a745;">
+                            <p style="color: #155724;"><strong>No Issues Found</strong></p>
+                            <p style="color: #155724; margin-top: 10px;">All Keycloak users with classId have corresponding face credentials.</p>
+                        </div>
+                        <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107; margin-top: 15px;">
+                            <p style="color: #856404;"><strong>⚠️ Limitation:</strong></p>
+                            <p style="color: #856404; margin-top: 10px;">
+                                This check only finds Keycloak users who have a classId attribute but no face credential.
+                                It cannot detect templates that exist in BWS but have no Keycloak user, because the BWS Management API
+                                doesn't provide a way to list all class IDs.
+                            </p>
+                            <p style="color: #856404; margin-top: 10px;">
+                                If you deleted a face credential in Keycloak but the template still exists in BWS, you need to:
+                            </p>
+                            <ol style="margin-left: 20px; margin-top: 5px; color: #856404;">
+                                <li>Manually delete the template from BWS using the BWS Management API</li>
+                                <li>Or remove the classId attribute from the user in Keycloak</li>
+                            </ol>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = `
+                    <div style="background: #fff3cd; padding: 20px; border-radius: 8px; border-left: 4px solid #ffc107;">
+                        <h3 style="color: #856404; margin-bottom: 15px;">Found ${orphaned.length} Potential Issue(s)</h3>
+                        <p style="color: #856404;">These Keycloak users have a classId attribute but no face credential:</p>
+                        <ul style="margin: 15px 0 15px 20px; color: #856404;">
+                `;
+
+                orphaned.forEach(template => {
+                    html += `
+                        <li style="margin: 10px 0;">
+                            <strong>User:</strong> ${escapeHtml(template.username || 'N/A')} 
+                            <strong style="margin-left: 15px;">Class ID:</strong> ${escapeHtml(template.classId)}
+                            <button class="button logout-button" style="padding: 4px 8px; margin-left: 10px; font-size: 0.8rem;" 
+                                    onclick="if(confirm('Remove classId attribute from user ${escapeHtml(template.username)}?')) { alert('Feature not yet implemented. Please remove manually in Keycloak Admin Console.'); }">
+                                Remove ClassId
+                            </button>
+                        </li>
+                    `;
+                });
+
+                html += `
+                        </ul>
+                        <p style="color: #856404; margin-top: 15px; font-size: 0.9rem;">
+                            <strong>Note:</strong> To fix these issues, remove the classId attribute from the affected users in Keycloak Admin Console.
+                        </p>
+                    </div>
+                `;
+
+                templateList.innerHTML = html;
+
+            } catch (error) {
+                console.error('Failed to find orphaned templates:', error);
+                templateList.innerHTML = `
+                    <div style="background: #f8d7da; padding: 15px; border-radius: 5px; color: #721c24;">
+                        <p><strong>❌ Error Finding Orphaned Templates</strong></p>
+                        <p style="margin-top: 10px;">${escapeHtml(error.message)}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Delete all orphaned templates
+        async function deleteAllOrphaned() {
+            const accessToken = localStorage.getItem('access_token');
+            if (!accessToken || !checkAdminRole(accessToken)) {
+                showError('Access denied');
+                return;
+            }
+
+            if (!confirm('Are you sure you want to delete ALL orphaned templates?\n\nThis action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const deleteUrl = `${KEYCLOAK_URL}/realms/${REALM}/bws-admin/orphaned`;
+                
+                const response = await fetch(deleteUrl, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                alert(`✅ Deleted ${result.deletedCount} orphaned template(s)`);
+                
+                // Reload
+                findOrphanedTemplates();
+
+            } catch (error) {
+                console.error('Failed to delete orphaned templates:', error);
+                alert(`❌ Failed to delete orphaned templates: ${error.message}`);
+            }
+        }
     </script>
+
+    <div class="footer">
+        <p>
+            🔐 Powered by <a href="https://www.bioid.com/" target="_blank">BioID</a> & 
+            <a href="https://www.keycloak.org/" target="_blank">Keycloak</a>
+        </p>
+        <p style="margin-top: 8px;">
+            Built with ❤️ for secure face authentication
+        </p>
+    </div>
+
 </body>
 </html>

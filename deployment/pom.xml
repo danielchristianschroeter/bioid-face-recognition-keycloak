@@ -41,6 +41,11 @@
       <artifactId>ui-components</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>com.bioid.keycloak</groupId>
+      <artifactId>bws-admin-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
 
     <!-- Runtime dependencies that need to be included -->
     <dependency>

@@ -95,6 +95,45 @@ liveness.challengeCount=1
 liveness.challengeTimeoutSeconds=30
 
 # =============================================================================
+# BWS MANAGEMENT API CONFIGURATION (Admin Role)
+# =============================================================================
+
+# BWS Management API Configuration
+# Required for bws-admin role functionality to manage face templates
+# Get these credentials from https://bwsportal.bioid.com (User Profile)
+
+# BWS Management API endpoint
+bws.management.api.url=https://bwsportal.bioid.com/api
+
+# Your BWS Portal email address (used for authentication)
+bws.management.email=your-email@example.com
+
+# Your BWS Portal API key (found in User Profile)
+# IMPORTANT: Keep this secret! Never commit to version control
+bws.management.apiKey=YOUR_BWS_MANAGEMENT_API_KEY
+
+# BWS Client ID (same as bioid.clientId above, but used for Management API calls)
+# This is used to query enrolled face classes via Management API
+bws.management.clientId=${bioid.clientId}
+
+# JWT token expiration for Management API (minutes)
+# Management API tokens are short-lived for security
+bws.management.jwt.expireMinutes=15
+
+# Enable/disable admin features
+# Set to false to completely disable admin panel functionality
+bws.admin.enabled=true
+
+# Admin API rate limiting (requests per minute)
+# Prevents abuse of admin endpoints
+bws.admin.rateLimit.requestsPerMinute=60
+
+# Admin audit logging
+# Log all admin actions for compliance and security
+bws.admin.audit.enabled=true
+bws.admin.audit.logLevel=INFO
+
+# =============================================================================
 # GRPC AND NETWORKING CONFIGURATION
 # =============================================================================
 

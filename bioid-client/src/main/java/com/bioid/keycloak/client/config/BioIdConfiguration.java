@@ -14,13 +14,15 @@ import org.slf4j.LoggerFactory;
 /**
  * Configuration manager for BioID Face Recognition extension.
  *
- * <p>Loads configuration from multiple sources in order of precedence: 1. System properties
- * (highest precedence) 2. Environment variables 3. ${kc.home}/conf/bioid.properties file 4. Default
- * values (lowest precedence)
+ * <p>
+ * Loads configuration from multiple sources in order of precedence: 1. System properties (highest
+ * precedence) 2. Environment variables 3. ${kc.home}/conf/bioid.properties file 4. Default values
+ * (lowest precedence)
  *
- * <p>Features: - Runtime configuration updates without server restart - Environment variable
- * support with standard naming - Configuration validation with detailed error messages - Secure
- * handling of sensitive configuration values - Support for different deployment environments
+ * <p>
+ * Features: - Runtime configuration updates without server restart - Environment variable support
+ * with standard naming - Configuration validation with detailed error messages - Secure handling of
+ * sensitive configuration values - Support for different deployment environments
  */
 public class BioIdConfiguration {
 
@@ -35,6 +37,13 @@ public class BioIdConfiguration {
   public static final String BIOID_CLIENT_ID = "bioid.clientId";
   public static final String BIOID_KEY = "bioid.key";
   public static final String BIOID_JWT_EXPIRE_MINUTES = "bioid.jwtExpireMinutes";
+
+  // BWS Management API configuration
+  public static final String BWS_MANAGEMENT_URL = "bws.management.url";
+  public static final String BWS_MANAGEMENT_JWT_TOKEN = "bws.management.jwtToken";
+  public static final String BWS_MANAGEMENT_EMAIL = "bws.management.email";
+  public static final String BWS_MANAGEMENT_API_KEY = "bws.management.apiKey";
+  public static final String BWS_MANAGEMENT_JWT_EXPIRE_MINUTES = "bws.management.jwtExpireMinutes";
 
   public static final String VERIFICATION_THRESHOLD = "verification.threshold";
   public static final String VERIFICATION_MAX_RETRIES = "verification.maxRetries";
@@ -67,11 +76,13 @@ public class BioIdConfiguration {
   public static final String LIVENESS_ADAPTIVE_MODE = "liveness.adaptiveMode";
   public static final String LIVENESS_FALLBACK_TO_PASSWORD = "liveness.fallbackToPassword";
   public static final String LIVENESS_CHALLENGE_COUNT = "liveness.challengeCount";
-  public static final String LIVENESS_CHALLENGE_TIMEOUT_SECONDS = "liveness.challengeTimeoutSeconds";
+  public static final String LIVENESS_CHALLENGE_TIMEOUT_SECONDS =
+      "liveness.challengeTimeoutSeconds";
 
   public static final String DEBUG_IMAGE_STORAGE_ENABLED = "debug.imageStorage.enabled";
   public static final String DEBUG_IMAGE_STORAGE_PATH = "debug.imageStorage.path";
-  public static final String DEBUG_IMAGE_STORAGE_INCLUDE_METADATA = "debug.imageStorage.includeMetadata";
+  public static final String DEBUG_IMAGE_STORAGE_INCLUDE_METADATA =
+      "debug.imageStorage.includeMetadata";
 
   // Default values
   private static final String DEFAULT_ENDPOINT = "face.bws-eu.bioid.com:443";
@@ -267,6 +278,13 @@ public class BioIdConfiguration {
     setFromEnv("DEBUG_IMAGE_STORAGE_ENABLED", DEBUG_IMAGE_STORAGE_ENABLED);
     setFromEnv("DEBUG_IMAGE_STORAGE_PATH", DEBUG_IMAGE_STORAGE_PATH);
     setFromEnv("DEBUG_IMAGE_STORAGE_INCLUDE_METADATA", DEBUG_IMAGE_STORAGE_INCLUDE_METADATA);
+    
+    // BWS Management API configuration
+    setFromEnv("BWS_MANAGEMENT_URL", BWS_MANAGEMENT_URL);
+    setFromEnv("BWS_MANAGEMENT_JWT_TOKEN", BWS_MANAGEMENT_JWT_TOKEN);
+    setFromEnv("BWS_MANAGEMENT_EMAIL", BWS_MANAGEMENT_EMAIL);
+    setFromEnv("BWS_MANAGEMENT_API_KEY", BWS_MANAGEMENT_API_KEY);
+    setFromEnv("BWS_MANAGEMENT_JWT_EXPIRE_MINUTES", BWS_MANAGEMENT_JWT_EXPIRE_MINUTES);
   }
 
   /** Sets property from environment variable if present. */
@@ -288,26 +306,12 @@ public class BioIdConfiguration {
     }
 
     // Also check for additional system properties
-    String[] systemKeys = {
-      BIOID_ENDPOINT,
-      BIOID_CLIENT_ID,
-      BIOID_KEY,
-      BIOID_JWT_EXPIRE_MINUTES,
-      VERIFICATION_THRESHOLD,
-      VERIFICATION_MAX_RETRIES,
-      VERIFICATION_TIMEOUT_SECONDS,
-      ENROLLMENT_TIMEOUT_SECONDS,
-      TEMPLATE_TTL_DAYS,
-      TEMPLATE_CLEANUP_INTERVAL_HOURS,
-      TEMPLATE_TYPE,
-      TEMPLATE_ENCRYPTION_ENABLED,
-      GRPC_CHANNEL_POOL_SIZE,
-      GRPC_KEEP_ALIVE_TIME_SECONDS,
-      GRPC_RETRY_MAX_ATTEMPTS,
-      GRPC_RETRY_BACKOFF_MULTIPLIER,
-      HEALTH_CHECK_INTERVAL_SECONDS,
-      HEALTH_CHECK_TIMEOUT_SECONDS
-    };
+    String[] systemKeys = {BIOID_ENDPOINT, BIOID_CLIENT_ID, BIOID_KEY, BIOID_JWT_EXPIRE_MINUTES,
+        VERIFICATION_THRESHOLD, VERIFICATION_MAX_RETRIES, VERIFICATION_TIMEOUT_SECONDS,
+        ENROLLMENT_TIMEOUT_SECONDS, TEMPLATE_TTL_DAYS, TEMPLATE_CLEANUP_INTERVAL_HOURS,
+        TEMPLATE_TYPE, TEMPLATE_ENCRYPTION_ENABLED, GRPC_CHANNEL_POOL_SIZE,
+        GRPC_KEEP_ALIVE_TIME_SECONDS, GRPC_RETRY_MAX_ATTEMPTS, GRPC_RETRY_BACKOFF_MULTIPLIER,
+        HEALTH_CHECK_INTERVAL_SECONDS, HEALTH_CHECK_TIMEOUT_SECONDS};
 
     for (String key : systemKeys) {
       String value = System.getProperty(key);
@@ -354,8 +358,7 @@ public class BioIdConfiguration {
 
     // Validate template type
     String templateType = getTemplateType();
-    if (!templateType.equals("COMPACT")
-        && !templateType.equals("STANDARD")
+    if (!templateType.equals("COMPACT") && !templateType.equals("STANDARD")
         && !templateType.equals("FULL")) {
       errors.append("Template type must be COMPACT, STANDARD, or FULL\n");
     }
@@ -408,6 +411,33 @@ public class BioIdConfiguration {
     return properties.getProperty(BIOID_KEY);
   }
 
+  public String getManagementUrl() {
+    return properties.getProperty(BWS_MANAGEMENT_URL);
+  }
+
+  /**
+   * Get the Management API JWT token.
+   * Returns the token if directly provided, otherwise returns null.
+   * JWT generation from email/API key is handled by BWSAdminService.
+   * 
+   * @return JWT token or null if not configured
+   */
+  public String getManagementJwtToken() {
+    String token = properties.getProperty(BWS_MANAGEMENT_JWT_TOKEN);
+    if (token != null && !token.trim().isEmpty()) {
+      return token;
+    }
+    return null;
+  }
+  
+  public String getManagementEmail() {
+    return properties.getProperty(BWS_MANAGEMENT_EMAIL);
+  }
+  
+  public String getManagementApiKey() {
+    return properties.getProperty(BWS_MANAGEMENT_API_KEY);
+  }
+
   public int getJwtExpireMinutes() {
     return getIntProperty(BIOID_JWT_EXPIRE_MINUTES, DEFAULT_JWT_EXPIRE_MINUTES);
   }
@@ -421,13 +451,13 @@ public class BioIdConfiguration {
   }
 
   public Duration getVerificationTimeout() {
-    return Duration.ofSeconds(
-        getIntProperty(VERIFICATION_TIMEOUT_SECONDS, DEFAULT_VERIFICATION_TIMEOUT));
+    return Duration
+        .ofSeconds(getIntProperty(VERIFICATION_TIMEOUT_SECONDS, DEFAULT_VERIFICATION_TIMEOUT));
   }
 
   public Duration getEnrollmentTimeout() {
-    return Duration.ofSeconds(
-        getIntProperty(ENROLLMENT_TIMEOUT_SECONDS, DEFAULT_ENROLLMENT_TIMEOUT));
+    return Duration
+        .ofSeconds(getIntProperty(ENROLLMENT_TIMEOUT_SECONDS, DEFAULT_ENROLLMENT_TIMEOUT));
   }
 
   public int getTemplateTtlDays() {
@@ -435,8 +465,8 @@ public class BioIdConfiguration {
   }
 
   public Duration getCleanupInterval() {
-    return Duration.ofHours(
-        getIntProperty(TEMPLATE_CLEANUP_INTERVAL_HOURS, DEFAULT_CLEANUP_INTERVAL_HOURS));
+    return Duration
+        .ofHours(getIntProperty(TEMPLATE_CLEANUP_INTERVAL_HOURS, DEFAULT_CLEANUP_INTERVAL_HOURS));
   }
 
   public String getTemplateType() {
@@ -452,8 +482,8 @@ public class BioIdConfiguration {
   }
 
   public Duration getKeepAliveTime() {
-    return Duration.ofSeconds(
-        getIntProperty(GRPC_KEEP_ALIVE_TIME_SECONDS, DEFAULT_KEEP_ALIVE_SECONDS));
+    return Duration
+        .ofSeconds(getIntProperty(GRPC_KEEP_ALIVE_TIME_SECONDS, DEFAULT_KEEP_ALIVE_SECONDS));
   }
 
   public int getRetryMaxAttempts() {
@@ -465,13 +495,13 @@ public class BioIdConfiguration {
   }
 
   public Duration getHealthCheckInterval() {
-    return Duration.ofSeconds(
-        getIntProperty(HEALTH_CHECK_INTERVAL_SECONDS, DEFAULT_HEALTH_CHECK_INTERVAL));
+    return Duration
+        .ofSeconds(getIntProperty(HEALTH_CHECK_INTERVAL_SECONDS, DEFAULT_HEALTH_CHECK_INTERVAL));
   }
 
   public Duration getHealthCheckTimeout() {
-    return Duration.ofSeconds(
-        getIntProperty(HEALTH_CHECK_TIMEOUT_SECONDS, DEFAULT_HEALTH_CHECK_TIMEOUT));
+    return Duration
+        .ofSeconds(getIntProperty(HEALTH_CHECK_TIMEOUT_SECONDS, DEFAULT_HEALTH_CHECK_TIMEOUT));
   }
 
   public String getPreferredRegion() {
@@ -487,8 +517,8 @@ public class BioIdConfiguration {
   }
 
   public Duration getLatencyThreshold() {
-    return Duration.ofMillis(
-        getIntProperty(REGIONAL_LATENCY_THRESHOLD_MS, DEFAULT_LATENCY_THRESHOLD_MS));
+    return Duration
+        .ofMillis(getIntProperty(REGIONAL_LATENCY_THRESHOLD_MS, DEFAULT_LATENCY_THRESHOLD_MS));
   }
 
   public boolean isLivenessActiveEnabled() {
@@ -496,8 +526,8 @@ public class BioIdConfiguration {
   }
 
   public boolean isLivenessChallengeResponseEnabled() {
-    return getBooleanProperty(
-        LIVENESS_CHALLENGE_RESPONSE_ENABLED, DEFAULT_LIVENESS_CHALLENGE_RESPONSE_ENABLED);
+    return getBooleanProperty(LIVENESS_CHALLENGE_RESPONSE_ENABLED,
+        DEFAULT_LIVENESS_CHALLENGE_RESPONSE_ENABLED);
   }
 
   public double getLivenessConfidenceThreshold() {
@@ -505,8 +535,8 @@ public class BioIdConfiguration {
   }
 
   public Duration getLivenessMaxOverhead() {
-    return Duration.ofMillis(
-        getIntProperty(LIVENESS_MAX_OVERHEAD_MS, DEFAULT_LIVENESS_MAX_OVERHEAD_MS));
+    return Duration
+        .ofMillis(getIntProperty(LIVENESS_MAX_OVERHEAD_MS, DEFAULT_LIVENESS_MAX_OVERHEAD_MS));
   }
 
   public boolean isLivenessAdaptiveMode() {
@@ -522,8 +552,8 @@ public class BioIdConfiguration {
   }
 
   public Duration getLivenessChallengeTimeout() {
-    return Duration.ofSeconds(
-        getIntProperty(LIVENESS_CHALLENGE_TIMEOUT_SECONDS, DEFAULT_LIVENESS_CHALLENGE_TIMEOUT_SECONDS));
+    return Duration.ofSeconds(getIntProperty(LIVENESS_CHALLENGE_TIMEOUT_SECONDS,
+        DEFAULT_LIVENESS_CHALLENGE_TIMEOUT_SECONDS));
   }
 
   // Helper methods for type conversion
@@ -534,8 +564,8 @@ public class BioIdConfiguration {
       try {
         return Integer.parseInt(value.trim());
       } catch (NumberFormatException e) {
-        logger.warn(
-            "Invalid integer value for {}: {}, using default: {}", key, value, defaultValue);
+        logger.warn("Invalid integer value for {}: {}, using default: {}", key, value,
+            defaultValue);
       }
     }
     return defaultValue;
@@ -589,6 +619,7 @@ public class BioIdConfiguration {
   }
 
   public boolean isDebugImageStorageIncludeMetadata() {
-    return getBooleanProperty(DEBUG_IMAGE_STORAGE_INCLUDE_METADATA, DEFAULT_DEBUG_IMAGE_STORAGE_INCLUDE_METADATA);
+    return getBooleanProperty(DEBUG_IMAGE_STORAGE_INCLUDE_METADATA,
+        DEFAULT_DEBUG_IMAGE_STORAGE_INCLUDE_METADATA);
   }
 }

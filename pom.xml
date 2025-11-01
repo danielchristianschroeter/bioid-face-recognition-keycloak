@@ -16,6 +16,7 @@
     <module>face-enroll-action</module>
     <module>face-authenticator</module>
     <module>ui-components</module>
+    <module>bws-admin-api</module>
     <module>deployment</module>
     <module>integration-tests</module>
   </modules>

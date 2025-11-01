@@ -23,6 +23,15 @@ public interface BioIdClient extends AutoCloseable {
   void deleteTemplate(long classId) throws BioIdException;
 
   /**
+   * Gets the number of enrolled face classes from BWS Management API.
+   * Note: This only works with BWS 3 installations.
+   * 
+   * @return number of enrolled classes
+   * @throws BioIdException if the operation fails
+   */
+  int getClassCount() throws BioIdException;
+
+  /**
    * Gets template status information.
    */
   String getTemplateStatus(long classId) throws BioIdException;

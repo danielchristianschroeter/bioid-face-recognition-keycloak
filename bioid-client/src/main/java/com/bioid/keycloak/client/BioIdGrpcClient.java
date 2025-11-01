@@ -213,6 +213,13 @@ public class BioIdGrpcClient implements BioIdClient {
   }
 
   @Override
+  public int getClassCount() throws BioIdException {
+    // Note: ClassCount is a REST Management API, not available via gRPC
+    logger.warn("getClassCount called but not implemented in gRPC client");
+    throw new BioIdException("ClassCount API not available via gRPC - use REST Management API");
+  }
+
+  @Override
   public TemplateStatusDetails getTemplateStatusDetails(long classId, boolean downloadThumbnails)
       throws BioIdException {
     logger.info("BWS gRPC getTemplateStatusDetails called for classId: {}, downloadThumbnails: {}",
