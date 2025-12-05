@@ -1,0 +1,60 @@
+name: Release Extension
+
+on:
+    push:
+        tags:
+            - "v*"
+
+permissions:
+    contents: write
+
+jobs:
+    build-and-release:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v6
+              with:
+                  fetch-depth: 0
+
+            - name: Set up Java
+              uses: actions/setup-java@v5
+              with:
+                  distribution: temurin
+                  java-version: "21"
+                  cache: maven
+
+            - name: Determine release version
+              id: version
+              run: |
+                  TAG="${GITHUB_REF_NAME}"
+                  VERSION="${TAG#v}"
+                  echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+                  echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+            - name: Verify docker-compose JAR reference
+              run: |
+                  if ! grep -q "keycloak-bioid-extension-${{ steps.version.outputs.version }}.jar" docker-compose.yml; then
+                    echo "::error::docker-compose.yml must reference keycloak-bioid-extension-${{ steps.version.outputs.version }}.jar"
+                    exit 1
+                  fi
+
+            - name: Update Maven project version
+              run: mvn -B versions:set -DnewVersion=${{ steps.version.outputs.version }} -DgenerateBackupPoms=false
+
+            - name: Build release JAR
+              run: mvn -B clean package -DskipTests
+
+            - name: Upload artifact
+              uses: actions/upload-artifact@v5
+              with:
+                  name: keycloak-bioid-extension-${{ steps.version.outputs.version }}
+                  path: deployment/target/keycloak-bioid-extension-${{ steps.version.outputs.version }}.jar
+
+            - name: Publish GitHub release
+              uses: softprops/action-gh-release@v2
+              with:
+                  tag_name: ${{ steps.version.outputs.tag }}
+                  name: Release ${{ steps.version.outputs.version }}
+                  files: deployment/target/keycloak-bioid-extension-${{ steps.version.outputs.version }}.jar

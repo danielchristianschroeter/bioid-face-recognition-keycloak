@@ -622,6 +622,16 @@ For detailed information, see the reorganized `docs/` directory:
 - [Product Overview](docs/history/PRODUCT_OVERVIEW.md) - Value proposition and readiness snapshot
 - Archived deep dives live in `docs/archive/` if you need older requirement or root-cause documentation
 
+## Release Process
+
+1. Update the Keycloak JAR mount in `docker-compose.yml` so it matches the release version you plan to tag (for example `keycloak-bioid-extension-1.2.3.jar`). This ensures local environments and CI stay in sync.
+2. Commit any pending changes and create a git tag using the format `vX.Y.Z`, then push the tag to GitHub.
+3. The `Release Extension` workflow (`.github/workflows/release.yml`) runs automatically for every pushed tag. It:
+   - Verifies `docker-compose.yml` references the same version as the tag.
+   - Sets the Maven project version, builds the shaded JAR, and uploads it as a workflow artifact.
+   - Publishes a GitHub Release with the built JAR attached.
+4. Download the published `keycloak-bioid-extension-X.Y.Z.jar` from the release page for deployment.
+
 ## Changelog
 
 ### Version 1.0.0

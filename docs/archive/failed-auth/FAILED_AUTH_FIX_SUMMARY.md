@@ -3,8 +3,9 @@
 ## Issue Fixed
 
 **Original Error:**
+
 ```
-ERROR: java.util.ServiceConfigurationError: org.keycloak.connections.jpa.JpaConnectionProviderFactory: 
+ERROR: java.util.ServiceConfigurationError: org.keycloak.connections.jpa.JpaConnectionProviderFactory:
 com.bioid.keycloak.failedauth.jpa.FailedAuthJpaConnectionProviderFactory not a subtype
 ```
 
@@ -48,7 +49,7 @@ The implementation was trying to register a custom JPA connection provider using
 <dependency>
     <groupId>org.postgresql</groupId>
     <artifactId>postgresql</artifactId>
-    <version>42.7.1</version>
+    <version>42.7.2</version>
 </dependency>
 
 <!-- C3P0 Connection Pool -->
@@ -77,6 +78,7 @@ The implementation was trying to register a custom JPA connection provider using
 ### 5. Service Loader Files Removed
 
 Deleted incorrect service loader registrations:
+
 - `META-INF/services/org.keycloak.connections.jpa.JpaConnectionProviderFactory`
 - `META-INF/services/org.keycloak.provider.ProviderFactory`
 
@@ -126,6 +128,7 @@ These were causing the "not a subtype" error.
 ## Test Results
 
 All 74 unit tests pass successfully:
+
 - FailedAuthConfiguration Tests: 21 tests ✓
 - FailedAuthUserPreferencesEntity Tests: 15 tests ✓
 - EncryptionService Tests: 16 tests ✓
@@ -174,6 +177,7 @@ FAILED_AUTH_DB_SHOW_SQL=false
 ## Production Readiness
 
 ### ✅ Implemented
+
 - Separate database for isolation
 - Connection pooling (C3P0)
 - Automatic schema management
@@ -184,6 +188,7 @@ FAILED_AUTH_DB_SHOW_SQL=false
 - Resource cleanup
 
 ### 📋 Ready for Production
+
 - Database encryption at rest (configure PostgreSQL)
 - SSL/TLS connections (configure JDBC URL)
 - Backup strategy (PostgreSQL backups)
@@ -205,4 +210,3 @@ FAILED_AUTH_DB_SHOW_SQL=false
 - Connection pool ensures efficient resource usage
 - All configuration is externalized via environment variables
 - No changes required to Keycloak's core database
-
