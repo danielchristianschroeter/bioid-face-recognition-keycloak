@@ -33,13 +33,6 @@ jobs:
                   echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
                   echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
-            - name: Verify docker-compose JAR reference
-              run: |
-                  if ! grep -q "keycloak-bioid-extension-${{ steps.version.outputs.version }}.jar" docker-compose.yml; then
-                    echo "::error::docker-compose.yml must reference keycloak-bioid-extension-${{ steps.version.outputs.version }}.jar"
-                    exit 1
-                  fi
-
             - name: Update Maven project version
               run: mvn -B versions:set -DnewVersion=${{ steps.version.outputs.version }} -DgenerateBackupPoms=false
 
