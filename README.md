@@ -4,7 +4,7 @@ A comprehensive Keycloak extension that integrates BioID's face recognition tech
 
 ## Video Overview
 
-[![Youtube Video]()](https://youtu.be/7iBIK6qZ68Q)
+https://youtu.be/7iBIK6qZ68Q
 
 ## Features
 
