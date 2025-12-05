@@ -7,7 +7,6 @@ import java.util.List;
 /**
  * Result of a repair operation for consistency issues
  */
-@SuppressWarnings("auxiliaryclass")
 public class RepairResult {
     
     private String realmId;
@@ -116,107 +115,4 @@ public class RepairResult {
         Instant endTime = completedAt != null ? completedAt : Instant.now();
         return endTime.toEpochMilli() - startedAt.toEpochMilli();
     }
-}
-
-/**
- * Status of repair operation
- */
-enum RepairStatus {
-    PENDING,
-    RUNNING,
-    COMPLETED,
-    FAILED,
-    PARTIALLY_COMPLETED
-}
-
-/**
- * Action taken during repair
- */
-class RepairAction {
-    private String issueId;
-    private RepairActionType type;
-    private String description;
-    private Instant executedAt;
-    private boolean requiresApproval;
-    private String approvedBy;
-    private Instant approvedAt;
-    private boolean successful = true;
-    private String errorMessage;
-
-    public RepairAction(String issueId, RepairActionType type, String description) {
-        this.issueId = issueId;
-        this.type = type;
-        this.description = description;
-        this.executedAt = Instant.now();
-    }
-
-    // Getters and setters
-    public String getIssueId() { return issueId; }
-    public void setIssueId(String issueId) { this.issueId = issueId; }
-
-    public RepairActionType getType() { return type; }
-    public void setType(RepairActionType type) { this.type = type; }
-
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-
-    public Instant getExecutedAt() { return executedAt; }
-    public void setExecutedAt(Instant executedAt) { this.executedAt = executedAt; }
-
-    public boolean isRequiresApproval() { return requiresApproval; }
-    public void setRequiresApproval(boolean requiresApproval) { this.requiresApproval = requiresApproval; }
-
-    public String getApprovedBy() { return approvedBy; }
-    public void setApprovedBy(String approvedBy) { this.approvedBy = approvedBy; }
-
-    public Instant getApprovedAt() { return approvedAt; }
-    public void setApprovedAt(Instant approvedAt) { this.approvedAt = approvedAt; }
-
-    public boolean isSuccessful() { return successful; }
-    public void setSuccessful(boolean successful) { this.successful = successful; }
-
-    public String getErrorMessage() { return errorMessage; }
-    public void setErrorMessage(String errorMessage) { this.errorMessage = errorMessage; }
-}
-
-/**
- * Types of repair actions
- */
-enum RepairActionType {
-    DELETE_ORPHANED_CREDENTIAL,
-    DELETE_ORPHANED_TEMPLATE,
-    UPDATE_METADATA,
-    RECREATE_CREDENTIAL,
-    RECREATE_TEMPLATE,
-    RESOLVE_CONFLICT,
-    MANUAL_INTERVENTION_REQUIRED
-}
-
-/**
- * Error during repair
- */
-class RepairError {
-    private String issueId;
-    private String errorMessage;
-    private Instant occurredAt;
-    private boolean retryable;
-
-    public RepairError(String issueId, String errorMessage) {
-        this.issueId = issueId;
-        this.errorMessage = errorMessage;
-        this.occurredAt = Instant.now();
-    }
-
-    // Getters and setters
-    public String getIssueId() { return issueId; }
-    public void setIssueId(String issueId) { this.issueId = issueId; }
-
-    public String getErrorMessage() { return errorMessage; }
-    public void setErrorMessage(String errorMessage) { this.errorMessage = errorMessage; }
-
-    public Instant getOccurredAt() { return occurredAt; }
-    public void setOccurredAt(Instant occurredAt) { this.occurredAt = occurredAt; }
-
-    public boolean isRetryable() { return retryable; }
-    public void setRetryable(boolean retryable) { this.retryable = retryable; }
 }

@@ -1,8 +1,7 @@
 package com.bioid.keycloak.rest;
 
 import com.bioid.keycloak.client.BioIdClient;
-import com.bioid.keycloak.client.BioIdGrpcClientProduction;
-import com.bioid.keycloak.client.config.BioIdConfiguration;
+import com.bioid.keycloak.client.BioIdClientFactory;
 import com.bioid.keycloak.client.exception.BioIdException;
 import com.bioid.keycloak.credential.FaceCredentialModel;
 import com.bioid.keycloak.credential.FaceCredentialProvider;
@@ -94,12 +93,8 @@ public class FaceCredentialResource {
       logger.info("Found face credential for user: {}, classId: {}", user.getId(),
           credential.getClassId());
 
-      // Get BioID client - create directly from configuration
-      BioIdConfiguration config = BioIdConfiguration.getInstance();
-      
-      if (config.getClientId() == null || config.getClientId().trim().isEmpty() ||
-          config.getKey() == null || config.getKey().trim().isEmpty()) {
-        logger.error("BioID credentials not configured");
+      BioIdClient bioIdClient = BioIdClientFactory.createProductionClient();
+      if (bioIdClient == null) {
         return Response.status(Response.Status.SERVICE_UNAVAILABLE)
             .header("Access-Control-Allow-Origin", "*")
             .header("Access-Control-Allow-Methods", "GET, OPTIONS")
@@ -107,12 +102,10 @@ public class FaceCredentialResource {
             .entity(Map.of("error", "BioID service not configured")).build();
       }
 
-      BioIdClient bioIdClient = new BioIdGrpcClientProduction(
-          config, config.getEndpoint(), config.getClientId(), config.getKey());
-
-      // Get template status with thumbnails
-      BioIdClient.TemplateStatusDetails status =
-          bioIdClient.getTemplateStatusDetails(credential.getClassId(), true);
+      BioIdClient.TemplateStatusDetails status;
+      try (BioIdClient client = bioIdClient) {
+        status = client.getTemplateStatusDetails(credential.getClassId(), true);
+      }
 
       logger.info("Retrieved template status for classId: {}, available: {}, thumbnails: {}",
           credential.getClassId(), status.isAvailable(), status.getThumbnails().size());
@@ -216,42 +209,44 @@ public class FaceCredentialResource {
       }
 
       // Get BioID client for template deletion
-      BioIdConfiguration config = BioIdConfiguration.getInstance();
-      BioIdClient bioIdClient = null;
-      
-      if (config.getClientId() != null && !config.getClientId().trim().isEmpty() &&
-          config.getKey() != null && !config.getKey().trim().isEmpty()) {
-        bioIdClient = new BioIdGrpcClientProduction(
-            config, config.getEndpoint(), config.getClientId(), config.getKey());
-      }
+      BioIdClient bioIdClient = BioIdClientFactory.createProductionClient();
 
-      // Delete all face credentials (which will also delete BWS templates)
       int deletedCount = 0;
-      for (CredentialModel credentialModel : credentials) {
-        try {
-          // Parse credential to get class ID for BWS deletion
-          FaceCredentialModel faceCredential = FaceCredentialModel.createFromCredentialModel(credentialModel);
-          
-          // Delete from BWS if client is available
-          if (bioIdClient != null && faceCredential != null) {
-            try {
-              bioIdClient.deleteTemplate(faceCredential.getClassId());
-              logger.info("Deleted BWS template for class ID: {}", faceCredential.getClassId());
-            } catch (Exception e) {
-              logger.warn("Failed to delete BWS template for class ID: {}", 
-                  faceCredential.getClassId(), e);
+      try {
+        // Delete all face credentials (which will also delete BWS templates)
+        for (CredentialModel credentialModel : credentials) {
+          try {
+            FaceCredentialModel faceCredential =
+                FaceCredentialModel.createFromCredentialModel(credentialModel);
+
+            if (bioIdClient != null && faceCredential != null) {
+              try {
+                bioIdClient.deleteTemplate(faceCredential.getClassId());
+                logger.info("Deleted BWS template for class ID: {}", faceCredential.getClassId());
+              } catch (Exception e) {
+                logger.warn("Failed to delete BWS template for class ID: {}",
+                    faceCredential.getClassId(), e);
+              }
             }
+
+            boolean deleted =
+                user.credentialManager().removeStoredCredentialById(credentialModel.getId());
+            if (deleted) {
+              deletedCount++;
+              logger.info("Deleted face credential: {} for user: {}", credentialModel.getId(),
+                  user.getId());
+            }
+          } catch (Exception e) {
+            logger.error("Failed to delete credential: {}", credentialModel.getId(), e);
           }
-          
-          // Delete from Keycloak
-          boolean deleted = user.credentialManager().removeStoredCredentialById(credentialModel.getId());
-          if (deleted) {
-            deletedCount++;
-            logger.info("Deleted face credential: {} for user: {}", credentialModel.getId(),
-                user.getId());
+        }
+      } finally {
+        if (bioIdClient != null) {
+          try {
+            bioIdClient.close();
+          } catch (Exception closeError) {
+            logger.warn("Failed to close BioID client", closeError);
           }
-        } catch (Exception e) {
-          logger.error("Failed to delete credential: {}", credentialModel.getId(), e);
         }
       }
 

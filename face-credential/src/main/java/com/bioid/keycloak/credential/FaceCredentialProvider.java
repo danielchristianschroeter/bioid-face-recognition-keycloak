@@ -625,15 +625,14 @@ public class FaceCredentialProvider
       logger.info("Performing {} liveness verification for user: {} with classId: {}", mode,
           user.getId(), credential.getClassId());
 
-      // Flip LEFT/RIGHT directions because video is mirrored for user display
-      // When user sees "turn LEFT" in mirrored video and turns left, camera captures them turning right
-      String flippedDirection = flipDirectionForMirroredVideo(challengeDirection);
-      logger.info("Challenge direction: {} (user sees) -> {} (camera captures)", 
-                  challengeDirection, flippedDirection);
+      String bwsDirection = remapDirectionForCamera(challengeDirection);
+      if (challengeDirection != null) {
+        logger.info("Challenge direction (user sees) {} -> BWS tag {}", challengeDirection, bwsDirection);
+      }
 
       // Step 1: Use BWS liveness detection with multiple images
       boolean livenessResult =
-          client.livenessDetectionWithImages(firstImage, secondImage, mode, flippedDirection);
+          client.livenessDetectionWithImages(firstImage, secondImage, mode, bwsDirection);
 
       logger.info("Liveness verification completed for user: {} - result: {}", user.getId(),
           livenessResult);
@@ -675,29 +674,22 @@ public class FaceCredentialProvider
   }
 
   /**
-   * Flips LEFT/RIGHT directions to account for mirrored video display.
-   * The video is mirrored for user comfort (like a mirror), but images are captured un-mirrored.
-   * When user sees "turn LEFT" and turns left in the mirror, camera captures them turning RIGHT.
-   * 
-   * @param direction The direction shown to the user (LEFT, RIGHT, UP, DOWN)
-   * @return The actual direction captured by the camera
+   * The webcam feed shown to the user is mirrored for a natural experience, but the raw video sent
+   * to BioID is not. That means when the user sees "look LEFT" and moves left, the captured image
+   * actually represents a rightward turn. BioID expects the real-world direction, so we flip LEFT
+   * and RIGHT while keeping UP/DOWN unchanged.
    */
-  private String flipDirectionForMirroredVideo(String direction) {
+  private String remapDirectionForCamera(String direction) {
     if (direction == null) {
       return null;
     }
-    
-    switch (direction.toUpperCase()) {
+    switch (direction.trim().toUpperCase()) {
       case "LEFT":
-        return "RIGHT";
+        return "right";
       case "RIGHT":
-        return "LEFT";
-      case "UP":
-      case "DOWN":
-        // UP and DOWN don't need flipping
-        return direction;
+        return "left";
       default:
-        return direction;
+        return direction.toLowerCase();
     }
   }
 

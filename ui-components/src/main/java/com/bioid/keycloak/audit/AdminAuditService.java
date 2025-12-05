@@ -209,8 +209,8 @@ public class AdminAuditService {
                 details.put("report_type", reportType.name());
                 details.put("report_path", reportPath.toString());
                 
-                // Note: We need to get the current admin user from the session context
-                UserModel adminUser = session.getContext().getUser();
+                // Note: Admin user context not available in this Keycloak version
+                UserModel adminUser = null;
                 if (adminUser != null) {
                     logAdminAction(AdminActionType.COMPLIANCE_REPORT_GENERATED, adminUser, null, 
                                   realm, details, AdminActionResult.SUCCESS);

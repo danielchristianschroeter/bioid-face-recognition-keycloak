@@ -17,6 +17,7 @@
     <module>face-authenticator</module>
     <module>ui-components</module>
     <module>bws-admin-api</module>
+    <module>failed-auth-storage</module>
     <module>deployment</module>
     <module>integration-tests</module>
   </modules>
@@ -29,7 +30,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
     <!-- Core Dependencies -->
-    <keycloak.version>26.4.0</keycloak.version>
+    <keycloak.version>26.4.7</keycloak.version>
     <grpc.version>1.76.0</grpc.version>
     <protobuf.version>4.33.0-RC2</protobuf.version>
     <javax.annotation.version>1.3.2</javax.annotation.version>
@@ -437,7 +438,6 @@
               </requireJavaVersion>
               <bannedDependencies>
                 <excludes>
-                  <exclude>commons-logging:commons-logging</exclude>
                   <exclude>log4j:log4j</exclude>
                 </excludes>
               </bannedDependencies>

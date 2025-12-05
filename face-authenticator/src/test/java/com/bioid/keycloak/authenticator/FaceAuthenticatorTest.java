@@ -62,6 +62,10 @@ class FaceAuthenticatorTest {
 
     when(mockLoginFormsProvider.setAttribute(anyString(), any()))
         .thenReturn(mockLoginFormsProvider);
+    when(mockLoginFormsProvider.setInfo(anyString()))
+        .thenReturn(mockLoginFormsProvider);
+    when(mockLoginFormsProvider.setInfo(anyString(), any()))
+        .thenReturn(mockLoginFormsProvider);
     when(mockUser.getId()).thenReturn("test-user-id");
 
     authenticator = new FaceAuthenticator(mockSession);
@@ -132,17 +136,32 @@ class FaceAuthenticatorTest {
 
   @Test
   void testAuthenticateWithoutValidCredentials() {
+    // When user has no credentials, they should be redirected to enrollment
     when(mockCredentialProvider.hasValidFaceCredentials(mockRealm, mockUser)).thenReturn(false);
+    // Realm has face auth enabled and required by default (null attributes)
+    when(mockRealm.getAttribute("faceAuthEnabled")).thenReturn(null);
+    when(mockRealm.getAttribute("faceAuthRequired")).thenReturn(null);
+    // User has face auth enabled by default (null attribute)
+    when(mockUser.getFirstAttribute("face.auth.enabled")).thenReturn(null);
+    when(mockUser.getFirstAttribute("face.auth.skipped")).thenReturn(null);
 
     authenticator.authenticate(mockContext);
 
-    verify(mockContext).attempted();
-    verify(mockContext, never()).challenge(any());
+    // Should redirect to enrollment, not skip
+    verify(mockUser).addRequiredAction("face-enroll");
+    verify(mockContext).forceChallenge(any());
+    verify(mockContext, never()).attempted();
   }
 
   @Test
   void testAuthenticateWithValidCredentials() {
     when(mockCredentialProvider.hasValidFaceCredentials(mockRealm, mockUser)).thenReturn(true);
+    // Realm has face auth enabled by default (null attributes)
+    when(mockRealm.getAttribute("faceAuthEnabled")).thenReturn(null);
+    when(mockRealm.getAttribute("faceAuthRequired")).thenReturn(null);
+    // User has face auth enabled by default (null attribute)
+    when(mockUser.getFirstAttribute("face.auth.enabled")).thenReturn(null);
+    when(mockUser.getFirstAttribute("face.auth.skipped")).thenReturn(null);
 
     authenticator.authenticate(mockContext);
 

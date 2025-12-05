@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 public class BioIdGrpcClientProduction implements BioIdClient {
 
   private static final Logger logger = LoggerFactory.getLogger(BioIdGrpcClientProduction.class);
+  private static final int MAX_MESSAGE_SIZE_BYTES = 8 * 1024 * 1024; // 8MB
 
   private final BioIdConfiguration config;
   private final String baseEndpoint;
@@ -46,13 +47,19 @@ public class BioIdGrpcClientProduction implements BioIdClient {
     String faceEndpoint = "face" + baseEndpoint;
     logger.info("Initializing gRPC channel to: {}", faceEndpoint);
 
-    this.faceChannel = NettyChannelBuilder.forTarget(faceEndpoint).useTransportSecurity().build();
+    this.faceChannel = NettyChannelBuilder.forTarget(faceEndpoint)
+        .useTransportSecurity()
+        .maxInboundMessageSize(MAX_MESSAGE_SIZE_BYTES)
+        .build();
 
     // Create gRPC channel for BWS service (liveness detection)
     String bwsEndpoint = "grpc" + baseEndpoint;
     logger.info("Initializing BWS gRPC channel to: {}", bwsEndpoint);
 
-    this.bwsChannel = NettyChannelBuilder.forTarget(bwsEndpoint).useTransportSecurity().build();
+    this.bwsChannel = NettyChannelBuilder.forTarget(bwsEndpoint)
+        .useTransportSecurity()
+        .maxInboundMessageSize(MAX_MESSAGE_SIZE_BYTES)
+        .build();
 
     // Create stubs with JWT authentication interceptor
     this.faceRecognitionStub =
@@ -379,10 +386,12 @@ public class BioIdGrpcClientProduction implements BioIdClient {
       Bwsmessages.ImageData.Builder image2Builder = Bwsmessages.ImageData.newBuilder()
           .setImage(com.google.protobuf.ByteString.copyFrom(imageBytes2));
 
-      // Add challenge direction tag to second image if challenge-response mode
+      // Add tags for challenge-response mode to align with BWS expectations
       if ("challenge-response".equalsIgnoreCase(mode) && challengeDirection != null) {
-        logger.info("Adding challenge direction tag: {}", challengeDirection);
-        image2Builder.addTags(challengeDirection.toUpperCase());
+        String normalizedDirection = challengeDirection.trim().toLowerCase();
+        logger.info("Adding challenge tags: neutral + {}", normalizedDirection);
+        image1Builder.addTags("neutral");
+        image2Builder.addTags(normalizedDirection);
       }
 
       // Create liveness detection request

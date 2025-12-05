@@ -7,7 +7,6 @@ import java.util.List;
 /**
  * Result of an orphaned data cleanup operation
  */
-@SuppressWarnings("auxiliaryclass")
 public class CleanupResult {
     
     private String realmId;
@@ -160,56 +159,5 @@ public class CleanupResult {
     public String toString() {
         return String.format("CleanupResult{realmId='%s', dryRun=%s, status=%s, credentials=%d, templates=%d, errors=%d}", 
             realmId, dryRun, status, getTotalCredentialsProcessed(), getTotalTemplatesProcessed(), errors.size());
-    }
-}
-
-/**
- * Status of cleanup operation
- */
-enum CleanupStatus {
-    PENDING,
-    RUNNING,
-    COMPLETED,
-    FAILED,
-    PARTIALLY_COMPLETED
-}
-
-/**
- * Error during cleanup
- */
-class CleanupError {
-    private String itemId;
-    private String itemType; // "credential" or "template"
-    private String errorMessage;
-    private Instant occurredAt;
-    private boolean retryable;
-
-    public CleanupError(String itemId, String itemType, String errorMessage) {
-        this.itemId = itemId;
-        this.itemType = itemType;
-        this.errorMessage = errorMessage;
-        this.occurredAt = Instant.now();
-    }
-
-    // Getters and setters
-    public String getItemId() { return itemId; }
-    public void setItemId(String itemId) { this.itemId = itemId; }
-
-    public String getItemType() { return itemType; }
-    public void setItemType(String itemType) { this.itemType = itemType; }
-
-    public String getErrorMessage() { return errorMessage; }
-    public void setErrorMessage(String errorMessage) { this.errorMessage = errorMessage; }
-
-    public Instant getOccurredAt() { return occurredAt; }
-    public void setOccurredAt(Instant occurredAt) { this.occurredAt = occurredAt; }
-
-    public boolean isRetryable() { return retryable; }
-    public void setRetryable(boolean retryable) { this.retryable = retryable; }
-
-    @Override
-    public String toString() {
-        return String.format("CleanupError{itemId='%s', itemType='%s', errorMessage='%s'}", 
-            itemId, itemType, errorMessage);
     }
 }

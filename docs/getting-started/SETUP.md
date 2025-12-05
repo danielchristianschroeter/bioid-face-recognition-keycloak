@@ -83,23 +83,7 @@ curl -s http://localhost:8080/health/ready
 
 After Keycloak is running, you need to manually set up a realm for face recognition:
 
-#### Option A: Import Pre-configured Realm (Recommended)
-
-1. **Access Admin Console**: Go to [http://localhost:8080](http://localhost:8080) and login with `admin` / `admin123`
-
-2. **Import Realm**: 
-   - Click the dropdown next to "Master" in the top-left
-   - Click "Create Realm"
-   - Click "Browse" and select `docker/keycloak/bioid-demo-realm.json`
-   - Click "Create"
-
-3. **Verify Import**: The `bioid-demo` realm should now be available with:
-   - **Demo User**: `demouser` / `demo123`
-   - **Demo Client**: `bioid-demo-client` (public client)
-   - **Face Authentication**: Pre-configured in custom browser flow
-   - **Face Enrollment**: Set as required action
-
-#### Option B: Manual Realm Configuration
+#### Manual Realm Configuration
 
 If you prefer to set up everything manually:
 
@@ -107,26 +91,35 @@ If you prefer to set up everything manually:
    - Click "Create Realm"
    - Enter realm name (e.g., `bioid-demo`)
    - Click "Create"
+   - Click on the new created realm to assign this as current realm
 
 2. **Configure Authentication Flow**:
    - Go to "Authentication" → "Flows"
-   - Duplicate the "Browser" flow and name it "Custom Browser"
-   - Add "Face Authenticator" execution after "Username Password Form"
-   - Set "Face Authenticator" to "Alternative"
-   - Go to "Bindings" and set "Browser Flow" to "Custom Browser"
+   - Duplicate the "Browser" flow and name it "browser-custom"
+   - Press "+" and Add execution beside "browser-custom forms"
+   - Add "Face Recognition" execution after "Username Password Form"
+   - Set "Face Recognition" to "Alternative"
+   - Go back to Authentication and press "Bind flow" on "browser-custom". Chosse binding type "Browser flow"
+   - Go to Tab "Required Actions" and enable "Face Recognition Enrollment"
+
+3. **Configure bioid theme**:
+   - Go to "Realm settings" → "Themes"
+   - Set "bioid" on "Login theme"
 
 3. **Create Test User**:
-   - Go to "Users" → "Add user"
-   - Set username (e.g., `demouser`) and enable user
+   - Go to "Users" → "Create new user"
+   - Set username (e.g., `demouser`)
+   - Press "Create" button
    - Go to "Credentials" tab and set password
-   - Go to "Required Actions" and add "Face Enrollment"
 
 4. **Create Test Client**:
    - Go to "Clients" → "Create client"
+   - Client type OpenID Connect
    - Set Client ID (e.g., `bioid-demo-client`)
    - Set Client type to "OpenID Connect"
    - Enable "Standard flow" and "Direct access grants"
    - Set valid redirect URIs (e.g., `http://localhost:3000/*`)
+   - Press Save
 
 ### Important URLs (After Realm Setup)
 
@@ -265,21 +258,67 @@ Users can manage their face authentication settings through the account console:
 | `KEYCLOAK_ADMIN_PASSWORD` | `admin123` | Keycloak admin password |
 | `KEYCLOAK_ADMIN_PASSWORD` | `admin123` | Keycloak admin password |
 
-### User-Level Configuration
+### Realm-Level Configuration (Admin)
 
-Users can configure their face authentication preferences through the account management console:
+Administrators can control face authentication at the realm level using realm attributes:
 
-**Face Authentication Settings:**
+**Realm Attributes (set in Keycloak Admin Console → Realm Settings → Attributes):**
+
+| Attribute | Default | Description |
+|-----------|---------|-------------|
+| `faceAuthEnabled` | `true` | Enable/disable face authentication for the entire realm |
+| `faceAuthRequired` | `true` | When `false`, users can skip face enrollment |
+
+**How to Configure:**
+1. Go to Keycloak Admin Console
+2. Select your realm (e.g., `bioid-demo`)
+3. Go to **Realm Settings** → **Attributes**
+4. Add the attributes as needed
+
+**Example Configurations:**
+
+- **Face auth required for all users** (default):
+  - `faceAuthEnabled` = `true`
+  - `faceAuthRequired` = `true`
+
+- **Face auth optional (users can skip)**:
+  - `faceAuthEnabled` = `true`
+  - `faceAuthRequired` = `false`
+
+- **Face auth completely disabled**:
+  - `faceAuthEnabled` = `false`
+
+### User-Level Configuration (Admin)
+
+Administrators can control face authentication for individual users:
+
+**User Attributes (set in Keycloak Admin Console → Users → Select User → Attributes):**
+
+| Attribute | Default | Description |
+|-----------|---------|-------------|
+| `face.auth.enabled` | `true` | Admin can disable face auth for specific users |
+| `face.auth.skipped` | `false` | Set automatically when user skips enrollment |
+| `face.auth.skipped.timestamp` | - | Timestamp when user skipped enrollment |
+
+**How to Disable Face Auth for a User:**
+1. Go to **Users** → Select the user
+2. Go to **Attributes** tab
+3. Add attribute: `face.auth.enabled` = `false`
+4. Click **Save**
+
+### User Self-Service Options
+
+When `faceAuthRequired` is set to `false` at the realm level, users have additional options:
+
+**During Enrollment:**
+- Users see a "Skip for now" link below the enrollment form
+- Skipping sets `face.auth.skipped=true` on their account
+- Users can enroll later through the account console
+
+**Account Console Features:**
 - **Enable/Disable**: Toggle face recognition for their account
-- **Require Face Auth**: Make face authentication mandatory (disables password fallback)
-- **Allow Fallback**: Enable password authentication as backup
 - **Re-enrollment**: Replace existing face templates
 - **Data Deletion**: Permanently remove biometric data
-
-**User Attributes (stored in Keycloak):**
-- `face.auth.enabled`: Boolean - Whether face auth is enabled for the user
-- `face.auth.required`: Boolean - Whether face auth is required (no fallback)
-- `face.auth.fallback.enabled`: Boolean - Whether password fallback is allowed
 
 **Access Methods:**
 - Account Console: `http://localhost:8080/realms/{realm}/account/#/face-credentials`

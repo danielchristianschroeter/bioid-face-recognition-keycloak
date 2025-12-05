@@ -96,6 +96,13 @@ public class FaceEnrollAction implements RequiredActionProvider {
         context.getUser().getId(),
         context.getAuthenticationSession().getParentSession().getId());
 
+    // Check if user clicked "Skip"
+    String action = context.getHttpRequest().getDecodedFormParameters().getFirst("action");
+    if ("skip".equals(action)) {
+      handleSkipEnrollment(context);
+      return;
+    }
+
     String imageData = context.getHttpRequest().getDecodedFormParameters().getFirst("imageData");
 
     // Log what we received
@@ -196,11 +203,36 @@ public class FaceEnrollAction implements RequiredActionProvider {
     return true;
   }
 
+  /**
+   * Handles user skipping face enrollment.
+   * Sets a user attribute to remember the skip and allows login to proceed.
+   */
+  private void handleSkipEnrollment(RequiredActionContext context) {
+    UserModel user = context.getUser();
+    logger.info("User {} chose to skip face enrollment", user.getId());
+    
+    // Set attribute to remember that user skipped enrollment
+    user.setSingleAttribute("face.auth.skipped", "true");
+    user.setSingleAttribute("face.auth.skipped.timestamp", String.valueOf(System.currentTimeMillis()));
+    
+    // Remove the required action
+    user.removeRequiredAction(PROVIDER_ID);
+    
+    // Complete successfully (allow login to proceed)
+    context.success();
+    
+    logger.info("Face enrollment skipped for user: {}", user.getId());
+  }
+
   private void handleEnrollmentSuccess(RequiredActionContext context) {
     logger.info("Face enrollment completed successfully for user: {}", context.getUser().getId());
 
     // Remove the required action from the user
     context.getUser().removeRequiredAction(PROVIDER_ID);
+    
+    // Clear any previous skip flag since user has now enrolled
+    context.getUser().removeAttribute("face.auth.skipped");
+    context.getUser().removeAttribute("face.auth.skipped.timestamp");
 
     // Log session information for debugging
     logger.debug(

@@ -2,7 +2,9 @@ package com.bioid.keycloak.credential;
 
 import static org.assertj.core.api.Assertions.*;
 
+import com.bioid.keycloak.client.BioIdClient;
 import java.util.List;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,12 +22,19 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class FaceCredentialProviderFactoryTest {
 
   @Mock private KeycloakSession session;
+  @Mock private BioIdClient mockBioIdClient;
 
   private FaceCredentialProviderFactory factory;
 
   @BeforeEach
   void setUp() {
     factory = new FaceCredentialProviderFactory();
+    FaceCredentialProviderFactory.setSharedBioIdClientForTesting(mockBioIdClient);
+  }
+
+  @AfterEach
+  void tearDown() {
+    FaceCredentialProviderFactory.setSharedBioIdClientForTesting(null);
   }
 
   @Test

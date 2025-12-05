@@ -46,6 +46,14 @@
       <artifactId>bws-admin-api</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <!-- Temporarily exclude failed-auth-storage to resolve Hibernate conflicts -->
+    <!--
+    <dependency>
+      <groupId>com.bioid.keycloak</groupId>
+      <artifactId>failed-auth-storage</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    -->
 
     <!-- Runtime dependencies that need to be included -->
     <dependency>
@@ -97,11 +105,20 @@
       <artifactId>jackson-datatype-jsr310</artifactId>
     </dependency>
 
+    <!-- Image processing for failed auth storage -->
+    <dependency>
+      <groupId>org.imgscalr</groupId>
+      <artifactId>imgscalr-lib</artifactId>
+      <version>4.2</version>
+    </dependency>
+
     <!-- Monitoring -->
     <dependency>
       <groupId>io.micrometer</groupId>
       <artifactId>micrometer-core</artifactId>
     </dependency>
+
+
   </dependencies>
 
   <build>
@@ -124,14 +141,13 @@
 
               <!-- Relocate packages to avoid conflicts -->
               <relocations>
-                <relocation>
-                  <pattern>com.google.protobuf</pattern>
-                  <shadedPattern>com.bioid.shaded.protobuf</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>io.grpc</pattern>
-                  <shadedPattern>com.bioid.shaded.grpc</shadedPattern>
-                </relocation>
+                <!--
+                  NOTE: Relocations for com.google.protobuf and io.grpc were removed because
+                  shading those generated classes causes an ASM IndexOutOfBoundsException while
+                  processing com/bioid/services/Bws$VideoLivenessDetectionRequest.
+                  Keeping the original package names avoids the build failure and still bundles the
+                  dependencies inside the fat JAR.
+                -->
                 <!-- Remove netty relocation since grpc-netty-shaded already handles this -->
                 <relocation>
                   <pattern>com.fasterxml.jackson</pattern>
@@ -149,6 +165,43 @@
 
               <!-- Include/exclude patterns -->
               <filters>
+                <!-- Exclude JAXB artifacts completely -->
+                <filter>
+                  <artifact>jakarta.xml.bind:jakarta.xml.bind-api</artifact>
+                  <excludes>
+                    <exclude>**</exclude>
+                  </excludes>
+                </filter>
+                <filter>
+                  <artifact>org.glassfish.jaxb:jaxb-runtime</artifact>
+                  <excludes>
+                    <exclude>**</exclude>
+                  </excludes>
+                </filter>
+                <filter>
+                  <artifact>org.glassfish.jaxb:jaxb-core</artifact>
+                  <excludes>
+                    <exclude>**</exclude>
+                  </excludes>
+                </filter>
+                <filter>
+                  <artifact>org.glassfish.jaxb:txw2</artifact>
+                  <excludes>
+                    <exclude>**</exclude>
+                  </excludes>
+                </filter>
+                <filter>
+                  <artifact>org.eclipse.angus:angus-activation</artifact>
+                  <excludes>
+                    <exclude>**</exclude>
+                  </excludes>
+                </filter>
+                <filter>
+                  <artifact>com.sun.istack:istack-commons-runtime</artifact>
+                  <excludes>
+                    <exclude>**</exclude>
+                  </excludes>
+                </filter>
                 <filter>
                   <artifact>*:*</artifact>
                   <excludes>
@@ -160,6 +213,24 @@
                     <!-- Exclude SLF4J implementations to prevent conflicts with Keycloak -->
                     <exclude>org/slf4j/impl/**</exclude>
                     <exclude>META-INF/services/org.slf4j.spi.SLF4JServiceProvider</exclude>
+                    <!-- Exclude Hibernate C3P0 provider to prevent conflicts -->
+                    <exclude>org/hibernate/c3p0/**</exclude>
+                    <exclude>META-INF/services/org.hibernate.boot.registry.selector.StrategyRegistrationProvider</exclude>
+                    <!-- Exclude conflicting JAXB service files -->
+                    <exclude>META-INF/services/jakarta.xml.bind.JAXBContextFactory</exclude>
+                    <!-- Exclude ALL JAXB classes to prevent classloader conflicts -->
+                    <exclude>jakarta/xml/bind/**</exclude>
+                    <exclude>org/glassfish/jaxb/**</exclude>
+                    <exclude>com/sun/xml/bind/**</exclude>
+                    <exclude>com/sun/istack/**</exclude>
+                    <exclude>org/eclipse/angus/**</exclude>
+                    <!-- Exclude Hibernate classes to prevent classloader conflicts -->
+                    <exclude>org/hibernate/**</exclude>
+                    <exclude>META-INF/services/org.hibernate.*</exclude>
+                    <!-- Exclude JPA classes that might conflict -->
+                    <exclude>jakarta/persistence/**</exclude>
+                    <exclude>javax/persistence/**</exclude>
+                    <exclude>META-INF/persistence.xml</exclude>
                   </excludes>
                 </filter>
               </filters>

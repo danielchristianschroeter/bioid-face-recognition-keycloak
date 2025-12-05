@@ -1,8 +1,7 @@
 package com.bioid.keycloak.credential;
 
 import com.bioid.keycloak.client.BioIdClient;
-import com.bioid.keycloak.client.BioIdGrpcClientProduction;
-import com.bioid.keycloak.client.config.BioIdConfiguration;
+import com.bioid.keycloak.client.BioIdClientFactory;
 import java.util.List;
 import org.keycloak.Config;
 import org.keycloak.credential.CredentialProviderFactory;
@@ -34,6 +33,13 @@ public class FaceCredentialProviderFactory
   private static volatile BioIdClient sharedBioIdClient = null;
   private static final Object clientLock = new Object();
 
+  /** Visible for testing to inject a stubbed BioIdClient and avoid real gRPC setup. */
+  static void setSharedBioIdClientForTesting(BioIdClient client) {
+    synchronized (clientLock) {
+      sharedBioIdClient = client;
+    }
+  }
+
   @Override
   public String getId() {
     return PROVIDER_ID;
@@ -64,33 +70,11 @@ public class FaceCredentialProviderFactory
       synchronized (clientLock) {
         if (sharedBioIdClient == null) {
           try {
-            BioIdConfiguration configAdapter = BioIdConfiguration.getInstance();
-
-            // Check if credentials are available
-            if (configAdapter.getClientId() == null || configAdapter.getClientId().trim().isEmpty()
-                || configAdapter.getKey() == null || configAdapter.getKey().trim().isEmpty()) {
-              logger.error(
-                  "PRODUCTION ISSUE: BioID credentials not configured. Set BWS_CLIENT_ID and BWS_KEY environment variables. "
-                      + "System will use mock implementations which are NOT suitable for production use.");
+            sharedBioIdClient = BioIdClientFactory.createProductionClient();
+            if (sharedBioIdClient == null) {
               return null;
             }
-
-            // Validate endpoint configuration
-            String endpoint = configAdapter.getEndpoint();
-            if (endpoint == null || endpoint.trim().isEmpty()) {
-              logger.error(
-                  "PRODUCTION ISSUE: BioID endpoint not configured. Set BWS_ENDPOINT environment variable.");
-              return null;
-            }
-
-            // Initialize the BioID gRPC client with proper configuration
-            logger.info("Initializing shared BioID gRPC client with endpoint: {}", endpoint);
-
-            // Create the production BWS gRPC client (uses proper gRPC protocol)
-            sharedBioIdClient = new BioIdGrpcClientProduction(configAdapter,
-                endpoint, configAdapter.getClientId(), configAdapter.getKey());
-
-            logger.info("Shared BioID gRPC client initialized successfully with endpoint: {}", endpoint);
+            logger.info("Shared BioID gRPC client initialized successfully");
           } catch (Exception e) {
             logger.error(
                 "PRODUCTION ISSUE: Failed to initialize shared BioID client. Check configuration and network connectivity. "

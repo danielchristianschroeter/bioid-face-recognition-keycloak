@@ -27,7 +27,7 @@ public class FaceAuthenticatorFactory implements AuthenticatorFactory {
   private static final String CONFIG_MAX_RETRIES = "maxRetries";
   private static final String CONFIG_VERIFICATION_THRESHOLD = "verificationThreshold";
   private static final String CONFIG_TIMEOUT_SECONDS = "timeoutSeconds";
-  private static final String CONFIG_LIVENESS_MODE = "livenessMode";
+  public static final String CONFIG_LIVENESS_MODE = "livenessMode";
   private static final String CONFIG_FALLBACK_ENABLED = "fallbackEnabled";
 
   @Override

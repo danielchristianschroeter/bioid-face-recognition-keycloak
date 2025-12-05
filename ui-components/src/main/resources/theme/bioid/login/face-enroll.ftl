@@ -53,6 +53,14 @@
                                 </button>
                             </div>
                         </form>
+                        <#if allowSkip?? && allowSkip>
+                        <form id="skip-form" action="${url.loginAction}" method="post" class="skip-form">
+                            <input type="hidden" name="action" value="skip" />
+                            <button id="skip-btn" type="submit" class="btn btn-link btn-skip">
+                                ${msg("face-enroll.button.skip", "Skip for now")}
+                            </button>
+                        </form>
+                        </#if>
                     </div>
                 </div>
                 
@@ -494,6 +502,26 @@
                 font-size: 0.85rem;
                 color: #6c757d;
                 text-align: center;
+            }
+            
+            /* Skip button styling */
+            .skip-form {
+                margin-top: 1rem;
+                text-align: center;
+            }
+            
+            .btn-skip {
+                color: #6c757d;
+                text-decoration: underline;
+                background: none;
+                border: none;
+                cursor: pointer;
+                font-size: 0.9rem;
+                padding: 0.5rem 1rem;
+            }
+            
+            .btn-skip:hover {
+                color: #495057;
             }
             
             /* Alert styling */

@@ -2,9 +2,14 @@
 
 A comprehensive Keycloak extension that integrates BioID's face recognition technology for biometric authentication, enrollment, and user management. This extension provides secure, GDPR-compliant face recognition capabilities with comprehensive administrative tools.
 
+## Video Overview
+
+[![Youtube Video]()](https://youtu.be/7iBIK6qZ68Q)
+
 ## Features
 
 ### Core Authentication
+
 - Face-based user authentication with configurable verification thresholds
 - Multi-frame enrollment process with quality validation
 - Automatic retry logic with fallback to traditional authentication
@@ -12,6 +17,7 @@ A comprehensive Keycloak extension that integrates BioID's face recognition tech
 - gRPC-based communication with BioID BWS 3 service
 
 ### Liveness Detection
+
 - **Passive liveness detection** - Automatic detection without user interaction (< 200ms overhead)
 - **Active smile detection** - User interaction with smile challenge (< 500ms processing)
 - **Challenge-response detection** - Head movement challenges for highest security (< 1000ms)
@@ -19,6 +25,7 @@ A comprehensive Keycloak extension that integrates BioID's face recognition tech
 - Configurable confidence thresholds and risk-based enforcement
 
 ### Security & Privacy
+
 - **Secure credential storage** with encryption and secure memory handling
 - **TLS configuration** with mutual TLS support for enhanced security
 - **Input validation** for images, metadata, and file paths to prevent attacks
@@ -28,6 +35,7 @@ A comprehensive Keycloak extension that integrates BioID's face recognition tech
 - **Zero persistence** of raw biometric data with immediate cleanup
 
 ### Administrative Management
+
 - **Bulk operations** for user management and template operations
 - **Template lifecycle management** with automatic cleanup and health monitoring
 - **Liveness service management** with real-time configuration
@@ -35,6 +43,7 @@ A comprehensive Keycloak extension that integrates BioID's face recognition tech
 - **Health checks** and connectivity testing for BioID services
 
 ### User REST API
+
 - **Template status API** - View enrollment status and metadata
 - **Enrolled images API** - Retrieve thumbnail images from BWS
 - **Credential management API** - Delete face credentials programmatically
@@ -42,6 +51,7 @@ A comprehensive Keycloak extension that integrates BioID's face recognition tech
 - **Bearer token authentication** - Secure access with OIDC tokens
 
 ### Mobile Responsive UI
+
 - **Fully responsive design** - Optimized for mobile phones, tablets, and desktop
 - **Touch-optimized controls** - Large touch targets and gesture support
 - **Adaptive layouts** - Portrait and landscape orientation support
@@ -50,6 +60,7 @@ A comprehensive Keycloak extension that integrates BioID's face recognition tech
 - **Accessibility features** - Screen reader support and keyboard navigation
 
 ### Monitoring and Observability
+
 - **Comprehensive metrics** via Micrometer integration
 - **Health check endpoints** for readiness and liveness probes
 - **Connection monitoring** with pool metrics and performance tracking
@@ -122,6 +133,7 @@ docker compose up -d
 ```
 
 This will start:
+
 - Keycloak with the face recognition extension pre-loaded
 - PostgreSQL database for Keycloak
 - Automatic extension deployment and configuration
@@ -142,6 +154,7 @@ After Keycloak is running, manually import the demo realm:
 4. Click "Create"
 
 The demo realm includes:
+
 - Pre-configured face authentication flow
 - Demo user with face enrollment required action
 - Test client for integration testing
@@ -243,6 +256,7 @@ Users can enroll their face biometrics through:
 The project includes two test applications for quick testing:
 
 #### simple-test.html
+
 A minimal test page that demonstrates the authentication flow without requiring CORS configuration:
 
 ```bash
@@ -257,12 +271,14 @@ http://localhost:3000/simple-test.html
 ```
 
 **Features:**
+
 - No CORS configuration needed
 - Direct authorization code flow
 - Quick login/logout testing
 - Minimal dependencies
 
 #### test-app.html
+
 A comprehensive test application with full token exchange and user info display:
 
 ```bash
@@ -276,6 +292,7 @@ http://localhost:3000/test-app.html
 ```
 
 **Features:**
+
 - Complete OIDC flow with token exchange
 - User information display
 - Template status and enrolled images via REST API
@@ -283,6 +300,7 @@ http://localhost:3000/test-app.html
 - Requires CORS configuration (see [KEYCLOAK_CLIENT_SETUP.md](docs/KEYCLOAK_CLIENT_SETUP.md))
 
 **CORS Setup for test-app.html:**
+
 1. Go to Admin Console → Clients → bioid-demo-client → Settings
 2. Add to "Web origins": `http://localhost:3000` or `+`
 3. Save and restart Keycloak
@@ -303,6 +321,7 @@ DELETE /realms/{realm}/face-api/template        # Delete face credentials
 **Authentication:** Requires valid access token (Bearer authentication)
 
 **Example:**
+
 ```bash
 # Get template status with enrolled images
 curl -H "Authorization: Bearer $ACCESS_TOKEN" \
@@ -391,6 +410,7 @@ mvn org.owasp:dependency-check-maven:check
 ```
 
 **Automated Updates:**
+
 - Dependabot runs weekly to check for updates
 - Security scans run on every PR and weekly
 - See `DEPENDENCY_MANAGEMENT.md` for quick reference
@@ -480,18 +500,21 @@ logger.com.bioid.keycloak.level=DEBUG
 ## Security Considerations
 
 ### Data Protection
+
 - Raw biometric images are never persisted
 - Templates are encrypted in the database
 - All communications use TLS encryption
 - Configurable data residency compliance
 
 ### Access Control
+
 - Admin endpoints require realm management permissions
 - User enrollment requires authentication
 - Deletion requests include approval workflows
 - Comprehensive audit logging
 
 ### Privacy Compliance
+
 - GDPR-compliant deletion workflows
 - User consent management
 - Data retention policies
@@ -502,23 +525,27 @@ logger.com.bioid.keycloak.level=DEBUG
 ### Common Issues
 
 **Extension not loading:**
+
 - Verify JAR is in `/opt/keycloak/providers/`
 - Check Keycloak logs for loading errors
 - Ensure Java version compatibility
 
 **BioID connectivity issues:**
+
 - Verify credentials in configuration
 - Test network connectivity to BioID endpoints
 - Check firewall and proxy settings
 - Use connectivity test in admin console
 
 **Authentication failures:**
+
 - Check verification threshold settings
 - Verify user enrollment status
 - Review authentication flow configuration
 - Check BioID service status
 
 **Performance issues:**
+
 - Monitor connection pool metrics
 - Adjust timeout settings
 - Review regional endpoint configuration
@@ -536,6 +563,7 @@ logger.com.bioid.keycloak.client.level=TRACE
 ### Support
 
 For technical support:
+
 1. Check the troubleshooting section
 2. Review Keycloak and extension logs
 3. Test BioID service connectivity
@@ -556,37 +584,48 @@ This project is licensed under the Apache License 2.0. See the LICENSE file for 
 
 ## Documentation
 
-For detailed information, see the documentation in the `docs/` directory:
+For detailed information, see the reorganized `docs/` directory:
 
 ### Getting Started
-- [Setup Guide](docs/SETUP.md) - Complete setup instructions with Docker Compose
-- [Windows Setup](docs/WINDOWS-SETUP.md) - Windows-specific setup and troubleshooting
-- [Quick Start Testing](docs/QUICK_START_TESTING.md) - Fast testing with simple-test.html
-- [Keycloak Client Setup](docs/KEYCLOAK_CLIENT_SETUP.md) - Client configuration for OIDC
+
+- [Setup Guide](docs/getting-started/SETUP.md) - Docker Compose setup
+- [Windows Setup](docs/getting-started/WINDOWS-SETUP.md) - Windows-specific notes
+- [Quick Start Testing](docs/getting-started/QUICK_START_TESTING.md) - Fast testing with `simple-test.html`
+- [Keycloak Client Setup](docs/getting-started/KEYCLOAK_CLIENT_SETUP.md) - Client configuration for OIDC
+- [Complete Integration Guide](docs/getting-started/COMPLETE_INTEGRATION_GUIDE.md) - Step-by-step integration walkthrough
+- [Face Authenticator Guide](docs/getting-started/INTEGRATION_GUIDE_FACE_AUTHENTICATOR.md) - Flow customization details
 
 ### Development & Testing
-- [Development Guide](docs/DEVELOPMENT.md) - Development setup and guidelines
-- [Testing Guide](docs/TESTING.md) - Comprehensive testing strategies
-- [Complete Testing Guide](docs/COMPLETE_TESTING_GUIDE.md) - End-to-end testing procedures
+
+- [Development Guide](docs/dev-ops/DEVELOPMENT.md) - Local dev environment and tooling
+- [Testing Guide](docs/dev-ops/TESTING.md) - Unit/integration guidance
+- [Complete Testing Guide](docs/dev-ops/COMPLETE_TESTING_GUIDE.md) - Full end-to-end procedures
+- [Dependency Management](docs/dev-ops/DEPENDENCY_MANAGEMENT.md) - Keeping libraries up to date
+- [Configuration Mapping](docs/dev-ops/CONFIGURATION_MAPPING.md) - Reference for configuration properties
 
 ### Deployment & Operations
-- [Deployment Guide](docs/DEPLOYMENT.md) - Production deployment instructions
-- [REST API Setup](docs/REST_API_SETUP.md) - REST API configuration and usage
-- [Monitoring Guide](docs/MONITORING.md) - Metrics, health checks, and observability
-- [Troubleshooting Guide](docs/TROUBLESHOOTING.md) - Common issues and solutions
+
+- [Deployment Guide](docs/operations/DEPLOYMENT.md) - Production-ready deployment steps
+- [REST API Setup](docs/operations/REST_API_SETUP.md) - REST configuration and usage
+- [Monitoring Guide](docs/operations/MONITORING.md) - Metrics, health checks, observability
+- [Troubleshooting Guide](docs/operations/TROUBLESHOOTING.md) - Common issues and fixes
+- [BWS Admin Setup](docs/operations/BWS_ADMIN_SETUP_GUIDE.md) - BioID service configuration
 
 ### Features & Security
-- [Active Liveness Detection](docs/ACTIVE_LIVENESS_DETECTION.md) - Liveness detection features
-- [Security Guide](docs/SECURITY.md) - Security best practices and compliance
-- [Dependency Management](docs/DEPENDENCY_MANAGEMENT.md) - Keeping dependencies updated
 
-### Mobile & UI
-- [Mobile Responsive Guide](docs/MOBILE_RESPONSIVE.md) - Mobile optimization and responsive design
-- [Mobile Testing Guide](docs/MOBILE_TESTING_GUIDE.md) - Testing on mobile devices and browsers
+- [Active Liveness Detection](docs/features/ACTIVE_LIVENESS_DETECTION.md) - Feature configuration
+- [Security Guide](docs/features/SECURITY.md) - Privacy, access control, and compliance
+
+### History & Decisions
+
+- [Failed Auth Overview](docs/history/FAILED_AUTH_OVERVIEW.md) - Summary of the failed-auth storage initiative
+- [Product Overview](docs/history/PRODUCT_OVERVIEW.md) - Value proposition and readiness snapshot
+- Archived deep dives live in `docs/archive/` if you need older requirement or root-cause documentation
 
 ## Changelog
 
 ### Version 1.0.0
+
 - Initial release with face authentication
 - Admin console integration
 - GDPR-compliant deletion workflows

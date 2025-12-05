@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 /**
  * Report containing the results of a data consistency check between Keycloak and BioID
  */
-@SuppressWarnings({"auxiliaryclass", "all"})
+@SuppressWarnings("all")
 public class DataConsistencyReport {
     
     private String realmId;
@@ -196,14 +196,4 @@ public class DataConsistencyReport {
         public int getLowSeverityIssues() { return lowSeverityIssues; }
         public void setLowSeverityIssues(int lowSeverityIssues) { this.lowSeverityIssues = lowSeverityIssues; }
     }
-}
-
-/**
- * Status of consistency check operation
- */
-enum ConsistencyCheckStatus {
-    PENDING,
-    RUNNING,
-    COMPLETED,
-    FAILED
 }

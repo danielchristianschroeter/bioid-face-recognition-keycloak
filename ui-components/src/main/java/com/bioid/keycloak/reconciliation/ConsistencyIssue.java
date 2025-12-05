@@ -7,7 +7,6 @@ import java.util.Map;
 /**
  * Represents a data consistency issue between Keycloak and BioID systems
  */
-@SuppressWarnings("auxiliaryclass")
 public class ConsistencyIssue {
     
     private String issueId;
@@ -183,59 +182,5 @@ public class ConsistencyIssue {
     public String toString() {
         return String.format("ConsistencyIssue{issueId='%s', type=%s, severity=%s, userId='%s', classId=%d, description='%s'}", 
             issueId, type, severity, userId, classId, description);
-    }
-}
-
-/**
- * Types of consistency issues that can be detected
- */
-enum ConsistencyIssueType {
-    ORPHANED_CREDENTIAL("Orphaned Credential", "Credential exists in Keycloak but no corresponding template in BioID"),
-    ORPHANED_TEMPLATE("Orphaned Template", "Template exists in BioID but no corresponding credential in Keycloak"),
-    METADATA_MISMATCH("Metadata Mismatch", "Metadata differs between Keycloak and BioID"),
-    SYNC_CONFLICT("Sync Conflict", "Conflicting data that cannot be automatically resolved"),
-    CORRUPTED_DATA("Corrupted Data", "Data corruption detected in either system"),
-    INVALID_REFERENCE("Invalid Reference", "Invalid reference between credential and template");
-
-    private final String displayName;
-    private final String description;
-
-    ConsistencyIssueType(String displayName, String description) {
-        this.displayName = displayName;
-        this.description = description;
-    }
-
-    public String getDisplayName() {
-        return displayName;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-}
-
-/**
- * Severity levels for consistency issues
- */
-enum IssueSeverity {
-    CRITICAL("Critical", "Immediate attention required - affects system functionality"),
-    HIGH("High", "High priority - affects user experience"),
-    MEDIUM("Medium", "Medium priority - should be addressed soon"),
-    LOW("Low", "Low priority - cosmetic or minor issues");
-
-    private final String displayName;
-    private final String description;
-
-    IssueSeverity(String displayName, String description) {
-        this.displayName = displayName;
-        this.description = description;
-    }
-
-    public String getDisplayName() {
-        return displayName;
-    }
-
-    public String getDescription() {
-        return description;
     }
 }

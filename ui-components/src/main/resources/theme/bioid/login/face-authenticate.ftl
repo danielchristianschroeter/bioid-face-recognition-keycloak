@@ -160,6 +160,19 @@
                     var stream = null;
                     var capturing = false;
                     var currentStep = 1;
+
+                    // Tunable detection settings to smooth face detection and motion response
+                    var detectionSettings = {
+                        faceStableFrames: 3,
+                        faceLostFrames: 2,
+                        faceDetectionInterval: 250,
+                        motionCheckInterval: 120,
+                        motionDiffThreshold: 6,
+                        motionChangeThreshold: 3.5,
+                        motionConsecutiveFrames: 2,
+                        motionMinFramesBeforeDetect: 3,
+                        secondCaptureDelayMs: 350
+                    };
                     
                     // Update status
                     function updateStatus(msg, showSpinner, processing) {
@@ -249,31 +262,40 @@
                     // Real face detection using canvas analysis
                     function startFaceDetection() {
                         var faceDetected = false;
+                        var stableCount = 0;
+                        var lostCount = 0;
                         var detectionInterval = setInterval(function() {
                             if (!video.videoWidth || !video.videoHeight) return;
                             
-                            // Capture current frame for analysis
                             var ctx = canvas.getContext('2d');
                             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
                             
-                            // Simple face detection using image data analysis
                             var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                             var detected = detectFaceInImageData(imageData);
                             
-                            if (detected && !faceDetected) {
-                                faceDetected = true;
-                                updateFaceMask(true);
-                                updateStatus('Face detected - Ready to verify', false);
-                                btn.disabled = false;
-                            } else if (!detected && faceDetected) {
-                                faceDetected = false;
-                                updateFaceMask(false);
-                                updateStatus('Position your face in the guide', false);
-                                btn.disabled = true;
+                            if (detected) {
+                                stableCount++;
+                                lostCount = 0;
+                                if (!faceDetected && stableCount >= detectionSettings.faceStableFrames) {
+                                    faceDetected = true;
+                                    updateFaceMask(true);
+                                    updateStatus('Face detected - Ready to verify', false);
+                                    btn.disabled = false;
+                                }
+                            } else {
+                                stableCount = 0;
+                                if (faceDetected) {
+                                    lostCount++;
+                                    if (lostCount >= detectionSettings.faceLostFrames) {
+                                        faceDetected = false;
+                                        updateFaceMask(false);
+                                        updateStatus('Position your face in the guide', false);
+                                        btn.disabled = true;
+                                    }
+                                }
                             }
-                        }, 500); // Check every 500ms
+                        }, detectionSettings.faceDetectionInterval);
                         
-                        // Store interval for cleanup
                         video.faceDetectionInterval = detectionInterval;
                     }
                     
@@ -382,7 +404,8 @@
                         return {
                             avgDiff: avgDiff,
                             changePercentage: changePercentage,
-                            hasMotion: avgDiff > 8 && changePercentage > 5
+                            hasMotion: avgDiff > detectionSettings.motionDiffThreshold &&
+                                       changePercentage > detectionSettings.motionChangeThreshold
                         };
                     }
                     
@@ -555,88 +578,71 @@
                                     var motionCheckInterval = setInterval(function() {
                                         if (motionDetected) return;
                                         
-                                        // Capture current frame
                                         var ctx = canvas.getContext('2d');
                                         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
                                         var currentFrame = ctx.getImageData(0, 0, canvas.width, canvas.height);
                                         
                                         frameCount++;
                                         
-                                        // Set baseline after first frame
                                         if (frameCount === 1) {
                                             baselineFrame = currentFrame;
                                             previousFrame = currentFrame;
                                             return;
                                         }
+
+                                        if (!previousFrame || !baselineFrame) {
+                                            previousFrame = currentFrame;
+                                            return;
+                                        }
                                         
-                                        if (previousFrame && baselineFrame) {
-                                            // Calculate motion from baseline (to detect actual movement)
-                                            var motionFromBaseline = calculateMotion(baselineFrame, currentFrame);
+                                        var motionFromBaseline = calculateMotion(baselineFrame, currentFrame);
+                                        var relativeMotion = calculateMotion(previousFrame, currentFrame);
+                                        var motionTriggered = motionFromBaseline.hasMotion || relativeMotion.hasMotion;
+                                        
+                                        if (motionTriggered && frameCount > detectionSettings.motionMinFramesBeforeDetect) {
+                                            consecutiveMotionFrames++;
                                             
-                                            // Log motion for debugging
-                                            if (frameCount % 5 === 0) {
-                                                console.log('Motion check:', motionFromBaseline.avgDiff.toFixed(2), 
-                                                           'changes:', motionFromBaseline.changePercentage.toFixed(1) + '%',
-                                                           'hasMotion:', motionFromBaseline.hasMotion);
-                                            }
-                                            
-                                            // If significant motion detected
-                                            if (motionFromBaseline.hasMotion) {
-                                                consecutiveMotionFrames++;
+                                            if (consecutiveMotionFrames >= detectionSettings.motionConsecutiveFrames) {
+                                                motionDetected = true;
+                                                clearInterval(motionCheckInterval);
                                                 
-                                                // Require 2 consecutive frames with motion to avoid false positives
-                                                if (consecutiveMotionFrames >= 2) {
-                                                    motionDetected = true;
-                                                    clearInterval(motionCheckInterval);
+                                                updateStatus('Perfect! Hold that position...', false);
+                                                updateStep(4);
+                                                
+                                                setTimeout(async function() {
+                                                    var imageData2 = await captureImage();
                                                     
-                                                    updateStatus('Perfect! Hold that position...', false);
-                                                    updateStep(4);
-                                                    
-                                                    console.log('Motion detected! Avg diff:', motionFromBaseline.avgDiff.toFixed(2), 
-                                                               'Change %:', motionFromBaseline.changePercentage.toFixed(1));
-                                                    
-                                                    // Capture second image after allowing movement to complete
-                                                    setTimeout(async function() {
-                                                        var imageData2 = await captureImage();
-                                                        
-                                                        if (!imageData2) {
-                                                            console.error('Failed to capture second image');
-                                                            updateStatus('Failed to capture second image. Please try again.', false);
-                                                            capturing = false;
-                                                            updateButton('Verify My Identity', false);
-                                                            hideChallenge();
-                                                            updateStep(1);
-                                                            return;
-                                                        }
-                                                        
-                                                        console.log('Second image captured with challenge:', currentChallenge);
-                                                        console.log('imageData1 type:', typeof imageData1, 'length:', imageData1 ? imageData1.length : 'null');
-                                                        console.log('imageData2 type:', typeof imageData2, 'length:', imageData2 ? imageData2.length : 'null');
-                                                        
-                                                        var payload = {
-                                                            images: [imageData1, imageData2],
-                                                            mode: 'challenge-response',
-                                                            challengeDirection: currentChallenge,
-                                                            livenessActive: true,
-                                                            livenessChallenge: true
-                                                        };
-                                                        
-                                                        console.log('Payload before stringify:', payload);
-                                                        console.log('Payload.images[0] length:', payload.images[0] ? payload.images[0].length : 'null');
-                                                        input.value = JSON.stringify(payload);
-                                                        console.log('JSON length:', input.value.length);
+                                                    if (!imageData2) {
+                                                        console.error('Failed to capture second image');
+                                                        updateStatus('Failed to capture second image. Please try again.', false);
+                                                        capturing = false;
+                                                        updateButton('Verify My Identity', false);
                                                         hideChallenge();
-                                                        submitForm();
-                                                    }, 500); // Allow movement to complete before capture
-                                                }
-                                            } else {
-                                                // Reset consecutive counter if no motion
-                                                consecutiveMotionFrames = 0;
+                                                        updateStep(1);
+                                                        return;
+                                                    }
+                                                    
+                                                    console.log('Second image captured with challenge:', currentChallenge);
+                                                    
+                                                    var payload = {
+                                                        images: [imageData1, imageData2],
+                                                        mode: 'challenge-response',
+                                                        challengeDirection: currentChallenge,
+                                                        livenessActive: true,
+                                                        livenessChallenge: true
+                                                    };
+                                                    
+                                                    input.value = JSON.stringify(payload);
+                                                    hideChallenge();
+                                                    submitForm();
+                                                }, detectionSettings.secondCaptureDelayMs);
                                             }
+                                        } else {
+                                            consecutiveMotionFrames = Math.max(consecutiveMotionFrames - 1, 0);
                                         }
                                         
                                         previousFrame = currentFrame;
-                                    }, 150); // Check every 150ms for good balance
+                                    }, detectionSettings.motionCheckInterval);
                                     
                                     // Timeout if no motion detected
                                     setTimeout(function() {

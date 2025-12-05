@@ -161,6 +161,8 @@
             <phase>generate-sources</phase>
             <configuration>
               <sources>
+                <source>${project.build.directory}/gen/java</source>
+                <source>${project.build.directory}/gen/grpc</source>
                 <source>${project.build.directory}/generated-sources/protobuf/java</source>
                 <source>${project.build.directory}/generated-sources/protobuf/grpc-java</source>
               </sources>

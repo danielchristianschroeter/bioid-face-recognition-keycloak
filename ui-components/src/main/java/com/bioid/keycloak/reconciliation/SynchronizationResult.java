@@ -7,7 +7,6 @@ import java.util.List;
 /**
  * Result of a synchronization operation between Keycloak and BioID
  */
-@SuppressWarnings("auxiliaryclass")
 public class SynchronizationResult {
     
     private String realmId;
@@ -121,89 +120,4 @@ public class SynchronizationResult {
         Instant endTime = completedAt != null ? completedAt : Instant.now();
         return endTime.toEpochMilli() - startedAt.toEpochMilli();
     }
-}
-
-/**
- * Status of synchronization operation
- */
-enum SynchronizationStatus {
-    PENDING,
-    RUNNING,
-    COMPLETED,
-    FAILED
-}
-
-/**
- * Action taken during synchronization
- */
-class SynchronizationAction {
-    private String issueId;
-    private SynchronizationActionType type;
-    private String description;
-    private Instant executedAt;
-    private boolean successful = true;
-    private String errorMessage;
-
-    public SynchronizationAction(String issueId, SynchronizationActionType type, String description) {
-        this.issueId = issueId;
-        this.type = type;
-        this.description = description;
-        this.executedAt = Instant.now();
-    }
-
-    // Getters and setters
-    public String getIssueId() { return issueId; }
-    public void setIssueId(String issueId) { this.issueId = issueId; }
-
-    public SynchronizationActionType getType() { return type; }
-    public void setType(SynchronizationActionType type) { this.type = type; }
-
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-
-    public Instant getExecutedAt() { return executedAt; }
-    public void setExecutedAt(Instant executedAt) { this.executedAt = executedAt; }
-
-    public boolean isSuccessful() { return successful; }
-    public void setSuccessful(boolean successful) { this.successful = successful; }
-
-    public String getErrorMessage() { return errorMessage; }
-    public void setErrorMessage(String errorMessage) { this.errorMessage = errorMessage; }
-}
-
-/**
- * Types of synchronization actions
- */
-enum SynchronizationActionType {
-    UPDATE_METADATA,
-    CREATE_CREDENTIAL,
-    DELETE_CREDENTIAL,
-    CREATE_TEMPLATE,
-    DELETE_TEMPLATE,
-    RESOLVE_CONFLICT
-}
-
-/**
- * Error during synchronization
- */
-class SynchronizationError {
-    private String issueId;
-    private String errorMessage;
-    private Instant occurredAt;
-
-    public SynchronizationError(String issueId, String errorMessage) {
-        this.issueId = issueId;
-        this.errorMessage = errorMessage;
-        this.occurredAt = Instant.now();
-    }
-
-    // Getters and setters
-    public String getIssueId() { return issueId; }
-    public void setIssueId(String issueId) { this.issueId = issueId; }
-
-    public String getErrorMessage() { return errorMessage; }
-    public void setErrorMessage(String errorMessage) { this.errorMessage = errorMessage; }
-
-    public Instant getOccurredAt() { return occurredAt; }
-    public void setOccurredAt(Instant occurredAt) { this.occurredAt = occurredAt; }
 }

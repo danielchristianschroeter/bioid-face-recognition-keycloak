@@ -24,6 +24,11 @@
       <artifactId>face-credential</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>com.bioid.keycloak</groupId>
+      <artifactId>failed-auth-storage</artifactId>
+      <version>${project.version}</version>
+    </dependency>
 
     <!-- Keycloak Dependencies -->
     <dependency>
@@ -53,6 +58,12 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.logging</groupId>
+      <artifactId>jboss-logging</artifactId>
+      <version>3.5.3.Final</version>
+      <scope>provided</scope>
     </dependency>
 
     <!-- Testing Dependencies -->
