@@ -30,7 +30,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
     <!-- Core Dependencies -->
-    <keycloak.version>26.4.7</keycloak.version>
+    <keycloak.version>26.5.3</keycloak.version>
     <grpc.version>1.76.0</grpc.version>
     <protobuf.version>4.33.0-RC2</protobuf.version>
     <javax.annotation.version>1.3.2</javax.annotation.version>
