@@ -39,6 +39,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nvd-
 
+      - name: Build project (install to local repo)
+        run: mvn -B install -DskipTests
+
       - name: Run OWASP Dependency Check
         run: |
           mvn org.owasp:dependency-check-maven:check \
