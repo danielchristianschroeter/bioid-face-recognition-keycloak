@@ -8,18 +8,21 @@ on:
 permissions:
     contents: write
 
+env:
+    FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
     build-and-release:
         runs-on: ubuntu-latest
 
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
               with:
                   fetch-depth: 0
 
             - name: Set up Java
-              uses: actions/setup-java@v4
+              uses: actions/setup-java@v5
               with:
                   distribution: temurin
                   java-version: "21"
@@ -40,7 +43,7 @@ jobs:
               run: mvn -B clean package -DskipTests
 
             - name: Upload artifact
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v7
               with:
                   name: keycloak-bioid-extension-${{ steps.version.outputs.version }}
                   path: deployment/target/keycloak-bioid-extension-${{ steps.version.outputs.version }}.jar

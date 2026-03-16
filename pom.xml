@@ -30,43 +30,43 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
     <!-- Core Dependencies -->
-    <keycloak.version>26.4.7</keycloak.version>
+    <keycloak.version>26.5.5</keycloak.version>
     <grpc.version>1.79.0</grpc.version>
     <protobuf.version>4.34.0</protobuf.version>
     <javax.annotation.version>1.3.2</javax.annotation.version>
 
     <!-- Security Dependencies -->
     <jjwt.version>0.13.0</jjwt.version>
-    <bouncycastle.version>1.82</bouncycastle.version>
+    <bouncycastle.version>1.83</bouncycastle.version>
 
     <!-- Monitoring and Observability -->
     <micrometer.version>1.14.12</micrometer.version>
     <slf4j.version>2.0.17</slf4j.version>
-    <logback.version>1.5.18</logback.version>
+    <logback.version>1.5.32</logback.version>
 
     <!-- Testing Dependencies -->
     <junit.version>5.12.2</junit.version>
-    <mockito.version>5.17.0</mockito.version>
-    <testcontainers.version>1.20.6</testcontainers.version>
+    <mockito.version>5.23.0</mockito.version>
+    <testcontainers.version>1.21.4</testcontainers.version>
     <assertj.version>3.27.3</assertj.version>
 
     <!-- Build Plugin Versions -->
-    <maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
-    <maven.surefire.plugin.version>3.5.4</maven.surefire.plugin.version>
-    <maven.failsafe.plugin.version>3.5.4</maven.failsafe.plugin.version>
+    <maven.compiler.plugin.version>3.15.0</maven.compiler.plugin.version>
+    <maven.surefire.plugin.version>3.5.5</maven.surefire.plugin.version>
+    <maven.failsafe.plugin.version>3.5.5</maven.failsafe.plugin.version>
     <protobuf.maven.plugin.version>0.6.1</protobuf.maven.plugin.version>
     <os.maven.plugin.version>1.7.1</os.maven.plugin.version>
     <jacoco.maven.plugin.version>0.8.14</jacoco.maven.plugin.version>
-    <owasp.dependency.check.version>12.1.8</owasp.dependency.check.version>
-    <spotbugs.maven.plugin.version>4.9.7.0</spotbugs.maven.plugin.version>
+    <owasp.dependency.check.version>12.2.0</owasp.dependency.check.version>
+    <spotbugs.maven.plugin.version>4.9.8.2</spotbugs.maven.plugin.version>
 
     <!-- Code Quality Plugin Versions -->
     <checkstyle.maven.plugin.version>3.6.0</checkstyle.maven.plugin.version>
     <pmd.maven.plugin.version>3.28.0</pmd.maven.plugin.version>
-    <spotless.maven.plugin.version>3.0.0</spotless.maven.plugin.version>
+    <spotless.maven.plugin.version>3.3.0</spotless.maven.plugin.version>
     <maven.javadoc.plugin.version>3.12.0</maven.javadoc.plugin.version>
-    <versions.maven.plugin.version>2.19.1</versions.maven.plugin.version>
-    <maven.dependency.plugin.version>3.9.0</maven.dependency.plugin.version>
+    <versions.maven.plugin.version>2.21.0</versions.maven.plugin.version>
+    <maven.dependency.plugin.version>3.10.0</maven.dependency.plugin.version>
     <maven.enforcer.plugin.version>3.6.2</maven.enforcer.plugin.version>
   </properties>
 
@@ -163,13 +163,23 @@
       <!-- JSON Processing Dependencies -->
       <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-annotations</artifactId>
+        <version>2.21</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-core</artifactId>
+        <version>2.21.1</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-databind</artifactId>
-        <version>2.20.0</version>
+        <version>2.21.1</version>
       </dependency>
       <dependency>
         <groupId>com.fasterxml.jackson.datatype</groupId>
         <artifactId>jackson-datatype-jsr310</artifactId>
-        <version>2.20.0</version>
+        <version>2.21.1</version>
       </dependency>
 
       <!-- Monitoring Dependencies -->
