@@ -1,14 +1,11 @@
 name: Dependency Security Check
 
 on:
-  schedule:
-    # Run every Monday at 2 AM UTC
-    - cron: '0 2 1 * 1'
   workflow_dispatch:
   pull_request:
     paths:
-      - 'pom.xml'
-      - '**/pom.xml'
+      - "pom.xml"
+      - "**/pom.xml"
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -17,7 +14,7 @@ jobs:
   dependency-check:
     name: Check Dependencies for Vulnerabilities
     runs-on: ubuntu-latest
-    
+
     permissions:
       contents: read
       security-events: write
@@ -30,8 +27,8 @@ jobs:
       - name: Set up Java
         uses: actions/setup-java@v5
         with:
-          java-version: '21'
-          distribution: 'temurin'
+          java-version: "21"
+          distribution: "temurin"
           cache: maven
 
       - name: Cache OWASP NVD data
@@ -45,22 +42,22 @@ jobs:
       - name: Build project (install to local repo)
         run: mvn -B install -DskipTests
 
-      - name: Run OWASP Dependency Check
+      - name: Run OWASP Dependency Check (aggregated)
         run: |
-          mvn org.owasp:dependency-check-maven:check \
+          mvn -B org.owasp:dependency-check-maven:aggregate \
             -DfailBuildOnCVSS=7 \
             -DsuppressionFiles=owasp-suppressions.xml \
             -Dformats=HTML,JSON,SARIF
 
       - name: Upload SARIF file
-        if: always()
+        if: always() && hashFiles('target/dependency-check-report.sarif') != ''
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: target/dependency-check-report.sarif
           category: dependency-check
 
       - name: Upload dependency check report
-        if: always()
+        if: always() && hashFiles('target/dependency-check-report.html') != ''
         uses: actions/upload-artifact@v7
         with:
           name: dependency-check-report
@@ -83,7 +80,7 @@ jobs:
   dependency-updates:
     name: Check for Dependency Updates
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -91,21 +88,21 @@ jobs:
       - name: Set up Java
         uses: actions/setup-java@v5
         with:
-          java-version: '21'
-          distribution: 'temurin'
+          java-version: "21"
+          distribution: "temurin"
           cache: maven
 
       - name: Check for dependency updates
         run: |
           echo "## 📦 Dependency Updates Available" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           # Check for dependency updates
           mvn versions:display-dependency-updates | tee dependency-updates.log
-          
+
           # Check for plugin updates
           mvn versions:display-plugin-updates | tee plugin-updates.log
-          
+
           # Format output for GitHub
           if grep -q "The following dependencies in Dependencies have newer versions:" dependency-updates.log; then
             echo "### 🔄 Dependencies with newer versions:" >> $GITHUB_STEP_SUMMARY
@@ -115,7 +112,7 @@ jobs:
           else
             echo "✅ All dependencies are up to date!" >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           if grep -q "The following plugin updates are available:" plugin-updates.log; then
             echo "### 🔌 Plugins with newer versions:" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
@@ -135,7 +132,7 @@ jobs:
   license-check:
     name: Check Dependency Licenses
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -143,20 +140,24 @@ jobs:
       - name: Set up Java
         uses: actions/setup-java@v5
         with:
-          java-version: '21'
-          distribution: 'temurin'
+          java-version: "21"
+          distribution: "temurin"
           cache: maven
+
+      - name: Build project (install to local repo)
+        run: mvn -B install -DskipTests
 
       - name: Generate license report
         run: |
-          mvn org.codehaus.mojo:license-maven-plugin:2.4.0:add-third-party \
+          mvn -B -pl deployment org.codehaus.mojo:license-maven-plugin:2.4.0:add-third-party \
             -Dlicense.excludedScopes=test,provided \
             -Dlicense.failOnMissing=false \
             -Dlicense.failOnBlacklist=true
 
       - name: Upload license report
+        if: hashFiles('deployment/target/generated-sources/license/THIRD-PARTY.txt') != ''
         uses: actions/upload-artifact@v7
         with:
           name: license-report
-          path: target/generated-sources/license/THIRD-PARTY.txt
+          path: deployment/target/generated-sources/license/THIRD-PARTY.txt
           retention-days: 30
