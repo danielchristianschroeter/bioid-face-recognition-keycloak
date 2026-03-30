@@ -39,7 +39,8 @@
 
     <!-- Security Dependencies -->
     <jjwt.version>0.13.0</jjwt.version>
-    <bouncycastle.version>1.83</bouncycastle.version>
+    <!-- 1.83 ships Java 25 MR-JAR classes; maven-shade-plugin on JDK 21 fails relocation (class file 69) -->
+    <bouncycastle.version>1.82</bouncycastle.version>
 
     <!-- Monitoring and Observability -->
     <micrometer.version>1.14.12</micrometer.version>
